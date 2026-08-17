@@ -279,6 +279,20 @@
   let gradeAutomated = [];
   let indiceAtual = -1;
 
+  function converterParaSegundos(val) {
+    if (!val) return 0;
+    if (typeof val === 'number') return val;
+    if (typeof val === 'string') {
+      if (val.includes(':')) {
+        const partes = val.split(':').map(Number);
+        if (partes.length === 3) return partes[0] * 3600 + partes[1] * 60 + partes[2];
+        if (partes.length === 2) return partes[0] * 60 + partes[1];
+      }
+      return parseFloat(val) || 0;
+    }
+    return 0;
+  }
+
   function horaParaMinutos(horarioStr) {
     const [h, m] = horarioStr.split(':').map(Number);
     return h * 60 + m;
@@ -322,7 +336,8 @@
 
             return eps.map(f => ({
               titulo: f.title || f.name.replace(/\.mp4$/i, ''),
-              url: `https://archive.org/download/${id}/${encodeURIComponent(f.name)}`
+              url: `https://archive.org/download/${id}/${encodeURIComponent(f.name)}`,
+              duracao: converterParaSegundos(f.length)
             }));
           }
         }
@@ -359,10 +374,11 @@
 
       const episodios = await carregarVideosArchive(idAlvo);
       
+      let epIndexInicial = 0;
       let urlEp = URL_VIDEO_INTERVALO;
       if (episodios.length > 0) {
-        const epIndex = diaDoAno % episodios.length;
-        urlEp = episodios[epIndex].url;
+        epIndexInicial = diaDoAno % episodios.length;
+        urlEp = episodios[epIndexInicial].url;
       }
 
       return {
@@ -370,7 +386,9 @@
         m: mInicio,
         mFim: mFim,
         n: nomeAlvo,
-        u: urlEp
+        u: urlEp,
+        listaEpisodios: episodios,
+        epIndexAtual: epIndexInicial
       };
     });
 
@@ -438,13 +456,40 @@
 
   function tocarProximoEpisodioSemCorte() {
     const agora = new Date();
-    const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
+    const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
+    const programaAtual = gradeAutomated[indiceAtual];
+
+    if (programaAtual && segundosHoje < (programaAtual.mFim * 60)) {
+      const segundosRestantesNoBloco = (programaAtual.mFim * 60) - segundosHoje;
+
+      if (programaAtual.listaEpisodios && programaAtual.listaEpisodios.length > 1) {
+        const proximoEpIndex = (programaAtual.epIndexAtual + 1) % programaAtual.listaEpisodios.length;
+        const proximoEp = programaAtual.listaEpisodios[proximoEpIndex];
+
+        const duracaoProximoEp = proximoEp.duracao > 0 ? proximoEp.duracao : 420;
+
+        if (duracaoProximoEp <= segundosRestantesNoBloco) {
+          programaAtual.epIndexAtual = proximoEpIndex;
+          programaAtual.u = proximoEp.url;
+          console.log(`✅ O próximo curta tem ${Math.round(duracaoProximoEp/60)} min e CABE nos ${Math.round(segundosRestantesNoBloco/60)} min restantes. Reproduzindo...`);
+          executarMidia(indiceAtual, false);
+          return;
+        } else {
+          console.log(`🛑 O próximo curta tem ${Math.round(duracaoProximoEp/60)} min e NÃO CABE nos ${Math.round(segundosRestantesNoBloco/60)} min restantes. Chamando o intervalo...`);
+          const proximoPrograma = gradeAutomated[indiceAtual + 1];
+          if (proximoPrograma) {
+            exibirTelaIntervalo(proximoPrograma);
+            return;
+          }
+        }
+      }
+    }
 
     const proximoIndice = indiceAtual + 1;
     const proximoPrograma = gradeAutomated[proximoIndice];
 
-    if (proximoPrograma && minutosHoje < horaParaMinutos("22:00")) {
-      if (minutosHoje < proximoPrograma.m) {
+    if (proximoPrograma && segundosHoje < (horaParaMinutos("22:00") * 60)) {
+      if (segundosHoje < (proximoPrograma.m * 60)) {
         exibirTelaIntervalo(proximoPrograma);
       } else {
         indiceAtual = proximoIndice;
@@ -500,7 +545,6 @@
       const agora = new Date();
       const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
 
-      // Se já passou do horário deste programa, interrompe as tentativas
       if (minutosHoje >= programa.mFim) {
         limparTimerReconexao();
         return;
@@ -533,13 +577,17 @@
       };
 
       testVideo.src = programa.u;
-    }, 20000); // Executa o teste a cada 20 segundos
+    }, 20000);
   }
 
   function executarMidia(index, sincronizarSegundos) {
     limparTimerReconexao();
     const programa = gradeAutomated[index];
     if (!programa) return;
+
+    if (programa.listaEpisodios && programa.listaEpisodios.length > 0) {
+      programa.u = programa.listaEpisodios[programa.epIndexAtual].url;
+    }
 
     const player = document.getElementById('player');
     player.loop = false;
@@ -551,7 +599,6 @@
 
     if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
 
-    // Tratamento de Erro com Fallback via Proxy e Reconexão Contínua
     player.onerror = function(e) {
       if (player.error) {
         const codigosErro = {
@@ -567,7 +614,6 @@
         return;
       }
 
-      // Se falhar a conexão direta (ex: Erro 500), tenta via proxy antes do intervalo
       if (!player.dataset.tentouProxy) {
         player.dataset.tentouProxy = "true";
         console.warn(`⚠️ Falha ao carregar link direto de "${programa.n}". Tentando via Proxy...`);
@@ -579,7 +625,6 @@
       tratarErroOuDemora(programa);
     };
 
-    // Timeout de resposta do servidor
     timeoutCarregamento = setTimeout(() => {
       if (player.readyState === 0) {
         console.warn(`⏳ Servidor do Archive excedeu o limite de 60s sem responder para: ${programa.n}. Alternando para intervalo...`);
