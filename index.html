@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>TV Online LL - WebTV Oficial</title>
+  <style>
+    body { 
+      background-color: #003399; 
+      color: #fff; 
+      font-family: Arial, sans-serif; 
+      text-align: center; 
+      padding: 20px;
+      margin: 0;
+      overflow-x: hidden;
+    }
+    .container { max-width: 800px; margin: 0 auto; }
+    .logo-site { margin-bottom: 15px; }
+    
+    .player-container { 
+      border: 4px solid #ffcc00; 
+      border-radius: 12px; 
+      overflow: hidden; 
+      background-color: #000; 
+      margin-bottom: 15px;
+      position: relative;
+    }
+    
+    video { width: 100%; display: block; }
+
+    .marca-dagua {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 80px;
+      opacity: 0.5;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .btn-fullscreen {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      border: 2px solid #ffcc00;
+      padding: 8px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.85rem;
+      z-index: 15;
+      transition: 0.2s;
+    }
+    .btn-fullscreen:hover { background: #ffcc00; color: #000; }
+
+    .tela-inicial {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 51, 153, 0.95);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+    }
+    .btn-ligar {
+      background-color: #ffcc00;
+      color: #000;
+      font-weight: bold;
+      font-size: 1.5rem;
+      padding: 15px 40px;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transition: 0.2s;
+    }
+    .btn-ligar:hover { background-color: #00ffcc; transform: scale(1.05); }
+
+    .info-box { 
+      background-color: rgba(0,0,0,0.7); 
+      padding: 15px; 
+      border-radius: 8px;
+      text-align: left;
+    }
+    .now-playing { color: #00ffcc; font-size: 1.2rem; margin-bottom: 8px; }
+    .next-program { color: #ffcc00; font-size: 1rem; }
+    
+    .clock { 
+      position: fixed; 
+      top: 10px; 
+      right: 10px; 
+      background: #000; 
+      padding: 5px 15px; 
+      border-radius: 5px;
+      border: 1px solid #ffcc00;
+      font-weight: bold;
+      z-index: 30;
+    }
+
+    .painel-dev {
+      margin-top: 20px;
+      background: #222;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px dashed #ffcc00;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="clock" id="clock">--:--</div>
+
+  <div class="container">
+    <div class="logo-site">
+      <img src="logo TVOnlineLL2.png" style="width: 160px !important; height: auto;" alt="TV Online LL">
+    </div>
+    
+    <div class="player-container" id="modulo-tv">
+      
+      <div class="tela-inicial" id="tela-start">
+        <h2>Sinal da TV Online LL Pronto</h2>
+        <button class="btn-ligar" onclick="ligarTelevisao()">📺 LIGAR A TV</button>
+      </div>
+
+      <img src="logo TVOnlineLL.png" class="marca-dagua" style="width: 80px !important; height: auto;" alt="Logo TV">
+      
+      <button class="btn-fullscreen" onclick="toggleFullScreen()">🔲 TELA CHEIA</button>
+      
+      <video id="player" autoplay playsinline preload="metadata"></video>
+    </div>
+    
+    <div class="info-box">
+      <div class="now-playing">📺 AGORA: <span id="current">Carregando sinal...</span></div>
+      <div class="next-program">➡️ A SEGUIR: <span id="next">Carregando...</span></div>
+    </div>
+
+    <div class="painel-dev">
+      ⚙️ <b>Sinal Sincronizado:</b> Reconexão Automática Contínua Ativa | Fallback de Proxy | Timeout: 60s
+    </div>
+  </div>
+
+<script>
+  const URL_VIDEO_INTERVALO = "Intervalo.mp4";
+
+  let timeoutCarregamento = null;
+  let timerReconexao = null;
+  let tvLigada = false;
+
+  function atualizarRelogio() {
+    const agora = new Date();
+    const h = String(agora.getHours()).padStart(2, '0');
+    const m = String(agora.getMinutes()).padStart(2, '0');
+    const s = String(agora.getSeconds()).padStart(2, '0');
+
+    document.getElementById('clock').innerText = `${h}:${m}`;
+
+    if (h === '07' && m === '00' && s === '00') {
+      console.log("⏰ 07:00 da manhã! Reativando sinal da transmissão...");
+      inicializarGradeAutomatica();
+    }
+  }
+  setInterval(atualizarRelogio, 1000);
+  atualizarRelogio();
+
+  const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+
+  const programacaoConfig = [
+    // === TURNO DA MANHÃ (07:00 - 11:30) ===
+    { idArchive: "coragemcaocovarde-backup", nomePrograma: "Coragem, o Cão Covarde", horarioInicio: "07:00", duracaoMinutos: 30 },
+    { idArchive: "as-aventuras-de-jackie-chan-Completo-paixaoflix", nomePrograma: "As Aventuras de Jackie Chan", horarioInicio: "07:30", duracaoMinutos: 30 },
+    { idArchive: "caverna-do-dragao-1983-480p", nomePrograma: "Caverna do Dragão", horarioInicio: "08:00", duracaoMinutos: 30 },
+    { 
+      nomePrograma: {
+        seg: "Homem-Aranha: Ação Sem Limites", ter: "Homem-Aranha: Ação Sem Limites", qua: "Homem-Aranha: A Nova Série Animada",
+        qui: "Homem-Aranha: Ação Sem Limites", sex: "Homem-Aranha: Ação Sem Limites", sab: "O Espetacular Homem-Aranha", dom: "O Espetacular Homem-Aranha"
+      },
+      idArchive: {
+        seg: "homem-aranha-acao-sem-limites", ter: "homem-aranha-acao-sem-limites", qua: "homem-aranha-a-nova-serie-animada-dublado",
+        qui: "homem-aranha-acao-sem-limites", sex: "homem-aranha-acao-sem-limites", sab: "o-espetacular-homem-aranha-2008-dublado_202606", dom: "o-espetacular-homem-aranha-2008-dublado_202606"
+      },
+      horarioInicio: "08:30", duracaoMinutos: 30 
+    },
+    { idArchive: "X-MenTheAnimatedSeriesDublado", nomePrograma: "X-Men: A Série Animada", horarioInicio: "09:00", duracaoMinutos: 30 },
+    { idArchive: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501", nomePrograma: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", horarioInicio: "09:30", duracaoMinutos: 30 },
+    { idArchive: "os-vingadores-unidos-dublado", nomePrograma: "Vingadores Unidos", horarioInicio: "10:00", duracaoMinutos: 30 },
+    { 
+      nomePrograma: {
+        seg: "Super Choque", ter: "Super Choque", qua: "Super Choque", qui: "Super Choque", sex: "Super Choque", sab: "Super Choque", dom: "O Que Há de Novo, Scooby-Doo?"
+      },
+      idArchive: {
+        seg: "PaixaoFlix-Super-Choque-Completo", ter: "PaixaoFlix-Super-Choque-Completo", qua: "PaixaoFlix-Super-Choque-Completo",
+        qui: "PaixaoFlix-Super-Choque-Completo", sex: "PaixaoFlix-Super-Choque-Completo", sab: "PaixaoFlix-Super-Choque-Completo", dom: "o-que-ha-de-novo-scooby-doo-1-temp"
+      },
+      horarioInicio: "10:30", duracaoMinutos: 30 
+    },
+    { idArchive: "e.-p.-c-s-01-e-09-terminando-e-quebrando-720p", nomePrograma: "Eu, A Patroa e as Crianças", horarioInicio: "11:00", duracaoMinutos: 30 },
+
+    // === TURNO DA TARDE (11:30 - 16:30) ===
+    { idArchive: "um-maluco-no-pedaco-6x-18", nomePrograma: "Um Maluco no Pedaço", horarioInicio: "11:30", duracaoMinutos: 30 },
+    { 
+      idArchive: [
+        "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-1-Temporada",
+        "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-2-Temporada",
+        "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-3-Temporada",
+        "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-4-Temporada"
+      ], 
+      nomePrograma: "Todo Mundo Odeia o Chris", horarioInicio: "12:00", duracaoMinutos: 30 
+    },
+    { idArchive: "disneymickeypatetadonaldplutoclassicos", nomePrograma: "Clássicos Disney (Mickey, Donald e Pluto)", horarioInicio: "12:30", duracaoMinutos: 30 },
+    { idArchive: "mickey-e-donald-a-mina-de-ouro-do-pato-donald", nomePrograma: "Mickey e Donald", horarioInicio: "13:00", duracaoMinutos: 30 },
+    { 
+      idArchive: [
+        "cavaleirosdozodiaco", "cavaleirosdozodiaco_202107", "cavaleiros.-do.-zodiaco-03-saga-doze-casas", "cavaleiros-do-zodiaco-04-saga-asgard"
+      ], 
+      nomePrograma: "Os Cavaleiros do Zodíaco", horarioInicio: "13:30", duracaoMinutos: 30 
+    },
+    { idArchive: "DragonBallCNBR", nomePrograma: "Dragon Ball", horarioInicio: "14:00", duracaoMinutos: 30 },
+    { idArchive: "DBZCN", nomePrograma: "Dragon Ball Z", horarioInicio: "14:30", duracaoMinutos: 30 },
+    { idArchive: "DragonBallGTCNBR", nomePrograma: "Dragon Ball GT", horarioInicio: "15:00", duracaoMinutos: 30 },
+    { idArchive: "DBZKaiCNBR", nomePrograma: "Dragon Ball Z Kai", horarioInicio: "15:30", duracaoMinutos: 30 },
+    { 
+      nomePrograma: {
+        seg: "Dragon Ball Super", ter: "Dragon Ball Super", qua: "Dragon Ball Super", qui: "Dragon Ball Super", sex: "Dragon Ball Super", sab: "Dragon Ball Daima", dom: "Dragon Ball Daima"
+      },
+      idArchive: {
+        seg: "DragonBallSuperCartoonNetworkBR", ter: "DragonBallSuperCartoonNetworkBR", qua: "DragonBallSuperCartoonNetworkBR",
+        qui: "DragonBallSuperCartoonNetworkBR", sex: "DragonBallSuperCartoonNetworkBR", sab: "DragonBallDaimaAdultSwimBrasil", dom: "DragonBallDaimaAdultSwimBrasil"
+      },
+      horarioInicio: "16:00", duracaoMinutos: 30 
+    },
+
+    // === TURNO FINAL DA TARDE (16:30 - 19:00) ===
+    { idArchive: "17.-o-dia-da-geladeira_202605", nomePrograma: "A Família Dinossauro", horarioInicio: "16:30", duracaoMinutos: 30 },
+    { 
+      nomePrograma: {
+        seg: "A Grande Família", ter: "Sai de Baixo", qua: "A Grande Família", qui: "Sai de Baixo", sex: "A Grande Família", sab: "Sai de Baixo", dom: "A Grande Família"
+      },
+      idArchive: {
+        seg: "a-grande-familia-dvd", ter: ["sai-de-baixo", "sdb-4temp"], qua: "a-grande-familia-dvd", qui: ["sai-de-baixo", "sdb-4temp"], sex: "a-grande-familia-dvd", sab: ["sai-de-baixo", "sdb-4temp"], dom: "a-grande-familia-dvd"
+      },
+      horarioInicio: "17:00", duracaoMinutos: 30 
+    },
+    { idArchive: "power-rangers-br", nomePrograma: "Power Rangers", horarioInicio: "17:30", duracaoMinutos: 30 },
+    { 
+      nomePrograma: {
+        seg: "Power Rangers Dino Trovão", ter: "Power Rangers Dino Trovão", qua: "Power Rangers Dino Trovão", qui: "Power Rangers Dino Trovão", sex: "Power Rangers Dino Trovão", sab: "Power Rangers", dom: "Power Rangers"
+      },
+      idArchive: {
+        seg: "power-rangers-dino-trovao-episodios", ter: "power-rangers-dino-trovao-episodios", qua: "power-rangers-dino-trovao-episodios", qui: "power-rangers-dino-trovao-episodios", sex: "power-rangers-dino-trovao-episodios", sab: "power-rangers-br", dom: "power-rangers-br"
+      },
+      horarioInicio: "18:00", duracaoMinutos: 30 
+    },
+    { idArchive: "NarutoCNBR", nomePrograma: "Naruto Clássico", horarioInicio: "18:30", duracaoMinutos: 30 },
+
+    // === TURNO DA NOITE (19:00 - 22:00) ===
+    { idArchive: "naruto-shippuuden-021-720p", nomePrograma: "Naruto Shippuden", horarioInicio: "19:00", duracaoMinutos: 30 },
+    { idArchive: "2000-yu-gi-oh-s-01", nomePrograma: "Yu-Gi-Oh!", horarioInicio: "19:30", duracaoMinutos: 30 },
+    { idArchive: "fullmetal-completo-pt-br", nomePrograma: "Fullmetal Alchemist", horarioInicio: "20:00", duracaoMinutos: 30 },
+    { idArchive: "hunter-x-hunter-1999-pt-br-004", nomePrograma: "Hunter x Hunter (1999)", horarioInicio: "20:30", duracaoMinutos: 30 },
+    { 
+      idArchive: [
+        "PaixaoFlix-1-Temp", "PaixaoFlix-2-Temp", "PaixaoFlix-Kenan-e-Kel-3oTemp", "PaixaoFlix-Kenan-e-Kel-4oTemp"
+      ], 
+      nomePrograma: "Kenan & Kel", horarioInicio: "21:00", duracaoMinutos: 30 
+    },
+    { 
+      nomePrograma: {
+        seg: "Batman: Os Bravos e os Destemidos", ter: "Batman: A Série Animada", qua: "Batman: Os Bravos e os Destemidos", qui: "Batman: A Série Animada", sex: "Batman: Os Bravos e os Destemidos", sab: "Batman: A Série Animada", dom: "Batman: Os Bravos e os Destemidos"
+      },
+      idArchive: {
+        seg: "batman-os-bravos-e-destemidos-2008-2011", ter: "batman-a-serie-animada-dublada-pt-br", qua: "batman-os-bravos-e-destemidos-2008-2011", qui: "batman-a-serie-animada-dublada-pt-br", sex: "batman-os-bravos-e-destemidos-2008-2011", sab: "batman-a-serie-animada-dublada-pt-br", dom: "batman-os-bravos-e-destemidos-2008-2011"
+      },
+      horarioInicio: "21:30", duracaoMinutos: 30 
+    }
+  ];
+
+  let gradeAutomated = [];
+  let indiceAtual = -1;
+
+  function horaParaMinutos(horarioStr) {
+    const [h, m] = horarioStr.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  function limparTimerReconexao() {
+    if (timerReconexao) {
+      clearInterval(timerReconexao);
+      timerReconexao = null;
+    }
+  }
+
+  async function carregarVideosArchive(idAlvo) {
+    const colecoes = Array.isArray(idAlvo) ? idAlvo : [idAlvo];
+    
+    const requisicoes = colecoes.map(async (id) => {
+      try {
+        let urlAPI = `https://archive.org/metadata/${id}`;
+        let resposta = await fetch(urlAPI);
+
+        if (!resposta.ok) {
+          urlAPI = `https://api.allorigins.win/raw?url=${encodeURIComponent(urlAPI)}`;
+          resposta = await fetch(urlAPI);
+        }
+
+        if (resposta.ok) {
+          const dadosMeta = await resposta.json();
+          if (dadosMeta.files) {
+            let arquivos = dadosMeta.files.filter(f => 
+              f.name && 
+              f.name.toLowerCase().endsWith('.mp4') && 
+              !f.name.endsWith('_thumb.mp4') &&
+              (f.format === 'h.264' || f.format === '512Kb MPEG4' || f.format === 'MPEG4' || !f.format)
+            );
+
+            if (arquivos.length === 0) {
+              arquivos = dadosMeta.files.filter(f => f.name && f.name.toLowerCase().endsWith('.mp4') && !f.name.endsWith('_thumb.mp4'));
+            }
+            
+            let eps = arquivos.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+
+            return eps.map(f => ({
+              titulo: f.title || f.name.replace(/\.mp4$/i, ''),
+              url: `https://archive.org/download/${id}/${encodeURIComponent(f.name)}`
+            }));
+          }
+        }
+        return [];
+      } catch (erro) {
+        console.error("Erro ao buscar metadados no Archive:", erro);
+        return [];
+      }
+    });
+
+    const resultados = await Promise.all(requisicoes);
+    return resultados.flat();
+  }
+
+  async function inicializarGradeAutomatica() {
+    gradeAutomated = [];
+    const hoje = new Date();
+    const diaDaSemana = DIAS_SEMANA[hoje.getDay()];
+    const diaDoAno = Math.floor((hoje - new Date(hoje.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+
+    const promessasProgs = programacaoConfig.map(async (prog) => {
+      const nomeAlvo = (typeof prog.nomePrograma === 'object' && prog.nomePrograma !== null)
+        ? prog.nomePrograma[diaDaSemana]
+        : prog.nomePrograma;
+
+      const idAlvo = (typeof prog.idArchive === 'object' && prog.idArchive !== null && !Array.isArray(prog.idArchive))
+        ? prog.idArchive[diaDaSemana]
+        : prog.idArchive;
+
+      if (!idAlvo || !nomeAlvo) return null;
+
+      const mInicio = horaParaMinutos(prog.horarioInicio);
+      const mFim = mInicio + prog.duracaoMinutos;
+
+      const episodios = await carregarVideosArchive(idAlvo);
+      
+      let urlEp = URL_VIDEO_INTERVALO;
+      if (episodios.length > 0) {
+        const epIndex = diaDoAno % episodios.length;
+        urlEp = episodios[epIndex].url;
+      }
+
+      return {
+        h: prog.horarioInicio,
+        m: mInicio,
+        mFim: mFim,
+        n: nomeAlvo,
+        u: urlEp
+      };
+    });
+
+    const resultadosGerais = await Promise.all(promessasProgs);
+    
+    gradeAutomated = resultadosGerais.filter(item => item !== null).sort((a, b) => a.m - b.m);
+
+    gradeAutomated.forEach((item, idx) => {
+      item.proximo = gradeAutomated[idx + 1] ? `${gradeAutomated[idx + 1].h} - ${gradeAutomated[idx + 1].n}` : "22:00 - Transmissão Encerrada";
+    });
+    
+    const player = document.getElementById('player');
+    if (player) {
+      player.onended = function() {
+        if (!player.loop) {
+          tocarProximoEpisodioSemCorte();
+        }
+      };
+    }
+
+    iniciarTransmissaoInicial();
+  }
+
+  function encerrarSinalMadrugada() {
+    limparTimerReconexao();
+    document.getElementById('current').innerText = "😴 Transmissão Encerrada (Voltamos às 07:00)";
+    document.getElementById('next').innerText = "📺 07:00 - Coragem, o Cão Covarde";
+    const player = document.getElementById('player');
+    if (player) {
+      player.loop = false;
+      player.pause();
+      player.removeAttribute('src');
+      player.load();
+    }
+  }
+
+  function iniciarTransmissaoInicial() {
+    const agora = new Date();
+    const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
+
+    if (minutosHoje >= horaParaMinutos("22:00") || minutosHoje < horaParaMinutos("07:00")) {
+      encerrarSinalMadrugada();
+      return;
+    }
+
+    indiceAtual = -1;
+    for (let i = 0; i < gradeAutomated.length; i++) {
+      if (minutosHoje >= gradeAutomated[i].m && minutosHoje < gradeAutomated[i].mFim) {
+        indiceAtual = i;
+        break;
+      }
+    }
+
+    if (indiceAtual !== -1) {
+      executarMidia(indiceAtual, true);
+    } else {
+      const proximoPrograma = gradeAutomated.find(p => p.m > minutosHoje);
+      if (proximoPrograma) {
+        exibirTelaIntervalo(proximoPrograma);
+      } else {
+        encerrarSinalMadrugada();
+      }
+    }
+  }
+
+  function tocarProximoEpisodioSemCorte() {
+    const agora = new Date();
+    const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
+
+    const proximoIndice = indiceAtual + 1;
+    const proximoPrograma = gradeAutomated[proximoIndice];
+
+    if (proximoPrograma && minutosHoje < horaParaMinutos("22:00")) {
+      if (minutosHoje < proximoPrograma.m) {
+        exibirTelaIntervalo(proximoPrograma);
+      } else {
+        indiceAtual = proximoIndice;
+        executarMidia(indiceAtual, false);
+      }
+    } else {
+      encerrarSinalMadrugada();
+    }
+  }
+
+  function exibirTelaIntervalo(proximoPrograma) {
+    if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+    document.getElementById('current').innerText = "⏸️ Intervalo Comercial";
+    document.getElementById('next').innerText = `${proximoPrograma.h} - ${proximoPrograma.n}`;
+    
+    const player = document.getElementById('player');
+    delete player.dataset.tentouProxy;
+    
+    player.onerror = function() {
+      console.error("Erro ao carregar vídeo de intervalo local. Aguardando a hora do próximo programa...");
+      player.onerror = null;
+    };
+
+    player.loop = true;
+    player.removeAttribute('crossorigin');
+    player.src = URL_VIDEO_INTERVALO;
+    
+    player.muted = false;
+    player.volume = 1.0;
+    
+    if (tvLigada) {
+      player.play().then(() => { player.muted = false; }).catch(() => {});
+    }
+
+    const checarIntervalo = setInterval(() => {
+      const agora = new Date();
+      const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
+
+      if (minutosHoje >= proximoPrograma.m) {
+        clearInterval(checarIntervalo);
+        limparTimerReconexao();
+        player.loop = false;
+        indiceAtual = gradeAutomated.indexOf(proximoPrograma);
+        executarMidia(indiceAtual, false);
+      }
+    }, 3000);
+  }
+
+  function tentarReconectarProgramaEmSegundoPlano(programa, index) {
+    limparTimerReconexao();
+
+    timerReconexao = setInterval(() => {
+      const agora = new Date();
+      const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
+
+      // Se já passou do horário deste programa, interrompe as tentativas
+      if (minutosHoje >= programa.mFim) {
+        limparTimerReconexao();
+        return;
+      }
+
+      console.log(`🔄 [Reconexão Auto] Testando sinal do programa "${programa.n}" em segundo plano...`);
+
+      const testVideo = document.createElement('video');
+      testVideo.preload = 'metadata';
+
+      let tentouProxyTeste = false;
+
+      testVideo.oncanplay = function() {
+        console.log(`✅ [Reconexão Auto] Sinal de "${programa.n}" recuperado! Retornando à transmissão normal...`);
+        limparTimerReconexao();
+        testVideo.removeAttribute('src');
+        testVideo.load();
+        executarMidia(index, true);
+      };
+
+      testVideo.onerror = function() {
+        if (!tentouProxyTeste) {
+          tentouProxyTeste = true;
+          testVideo.src = `https://corsproxy.io/?${encodeURIComponent(programa.u)}`;
+        } else {
+          console.warn(`⏳ [Reconexão Auto] Servidor indisponível para "${programa.n}". Nova tentativa em 20 segundos...`);
+          testVideo.removeAttribute('src');
+          testVideo.load();
+        }
+      };
+
+      testVideo.src = programa.u;
+    }, 20000); // Executa o teste a cada 20 segundos
+  }
+
+  function executarMidia(index, sincronizarSegundos) {
+    limparTimerReconexao();
+    const programa = gradeAutomated[index];
+    if (!programa) return;
+
+    const player = document.getElementById('player');
+    player.loop = false;
+    player.removeAttribute('crossorigin');
+    delete player.dataset.tentouProxy;
+
+    document.getElementById('current').innerText = programa.n;
+    document.getElementById('next').innerText = programa.proximo;
+
+    if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+
+    // Tratamento de Erro com Fallback via Proxy e Reconexão Contínua
+    player.onerror = function(e) {
+      if (player.error) {
+        const codigosErro = {
+          1: "DOWNLOAD_ABORTADO (A reprodução foi cancelada)",
+          2: "ERRO_DE_REDE (Servidor do Archive demorou ou cortou a conexão)",
+          3: "ERRO_DE_DECODIFICACAO (Arquivo ou codec corrompido)",
+          4: "FORMATO_NAO_SUPORTADO (Browser não suporta o codec deste arquivo)"
+        };
+        console.error(`❌ Falha no programa (${programa.n}):`, codigosErro[player.error.code] || player.error.code);
+      }
+
+      if (player.src && player.src.includes(URL_VIDEO_INTERVALO)) {
+        return;
+      }
+
+      // Se falhar a conexão direta (ex: Erro 500), tenta via proxy antes do intervalo
+      if (!player.dataset.tentouProxy) {
+        player.dataset.tentouProxy = "true";
+        console.warn(`⚠️ Falha ao carregar link direto de "${programa.n}". Tentando via Proxy...`);
+        player.src = `https://corsproxy.io/?${encodeURIComponent(programa.u)}`;
+        return;
+      }
+
+      delete player.dataset.tentouProxy;
+      tratarErroOuDemora(programa);
+    };
+
+    // Timeout de resposta do servidor
+    timeoutCarregamento = setTimeout(() => {
+      if (player.readyState === 0) {
+        console.warn(`⏳ Servidor do Archive excedeu o limite de 60s sem responder para: ${programa.n}. Alternando para intervalo...`);
+        tratarErroOuDemora(programa);
+      }
+    }, 60000);
+
+    player.oncanplay = function() {
+      if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+    };
+
+    player.src = programa.u;
+    
+    player.muted = false;
+    player.volume = 1.0;
+
+    if (sincronizarSegundos) {
+      const agora = new Date();
+      const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
+      const segundosHoje = agora.getSeconds();
+      const minutosDecorridos = minutosHoje - programa.m;
+      const segundosDecorridos = (minutosDecorridos * 60) + segundosHoje;
+
+      player.addEventListener('loadedmetadata', function() {
+        if (segundosDecorridos >= player.duration) {
+          const proximoPrograma = gradeAutomated[index + 1];
+          if (proximoPrograma) {
+            exibirTelaIntervalo(proximoPrograma);
+          } else {
+            encerrarSinalMadrugada();
+          }
+        } else if (segundosDecorridos > 0) {
+          player.currentTime = segundosDecorridos;
+          if (tvLigada) {
+            player.play().then(() => { player.muted = false; }).catch(err => console.log("Aguardando interação do usuário...", err));
+          }
+        }
+      }, { once: true });
+    } else {
+      if (tvLigada) {
+        player.play().then(() => { player.muted = false; }).catch(err => console.log("Aguardando interação...", err));
+      }
+    }
+  }
+
+  function tratarErroOuDemora(programa) {
+    if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+    const index = gradeAutomated.indexOf(programa);
+    const proximoPrograma = gradeAutomated[index + 1];
+    
+    if (proximoPrograma) {
+      exibirTelaIntervalo(proximoPrograma);
+      tentarReconectarProgramaEmSegundoPlano(programa, index);
+    } else {
+      encerrarSinalMadrugada();
+    }
+  }
+
+  function ligarTelevisao() {
+    tvLigada = true;
+    document.getElementById('tela-start').style.display = 'none';
+    const player = document.getElementById('player');
+    
+    player.muted = false;
+    player.volume = 1.0;
+    
+    player.play().then(() => { player.muted = false; }).catch(err => console.log("Erro ao reproduzir ao ligar:", err));
+  }
+
+  function toggleFullScreen() {
+    const modulo = document.getElementById('modulo-tv');
+    if (!document.fullscreenElement) {
+      if (modulo.requestFullscreen) modulo.requestFullscreen();
+      else if (modulo.webkitRequestFullscreen) modulo.webkitRequestFullscreen();
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', inicializarGradeAutomatica);
+</script>
+</body>
+</html>
