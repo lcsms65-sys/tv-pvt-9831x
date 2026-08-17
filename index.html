@@ -27,7 +27,6 @@
     
     video { width: 100%; display: block; }
 
-    /* Ajuste de Tela Cheia para expandir e preencher mantendo a proporção */
     #modulo-tv:fullscreen {
       display: flex;
       align-items: center;
@@ -197,10 +196,11 @@
   const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
 
   const programacaoConfig = [
-    // === TURNO DA MANHÃ (07:00 - 11:30) ===
+    // === TURNO DA MANHÃ (07:00 - 12:00) ===
     { idArchive: "coragemcaocovarde-backup", nomePrograma: "Coragem, o Cão Covarde", horarioInicio: "07:00", duracaoMinutos: 30 },
     { idArchive: "as-aventuras-de-jackie-chan-Completo-paixaoflix", nomePrograma: "As Aventuras de Jackie Chan", horarioInicio: "07:30", duracaoMinutos: 30 },
     { idArchive: "caverna-do-dragao-1983-480p", nomePrograma: "Caverna do Dragão", horarioInicio: "08:00", duracaoMinutos: 30 },
+    { idArchive: "homem-aranhaaserieanimada", nomePrograma: "Homem-Aranha: A Série Animada (1994)", horarioInicio: "08:30", duracaoMinutos: 30 },
     { 
       nomePrograma: {
         seg: "Homem-Aranha: Ação Sem Limites", ter: "Homem-Aranha: Ação Sem Limites", qua: "Homem-Aranha: A Nova Série Animada",
@@ -210,11 +210,11 @@
         seg: "homem-aranha-acao-sem-limites", ter: "homem-aranha-acao-sem-limites", qua: "homem-aranha-a-nova-serie-animada-dublado",
         qui: "homem-aranha-acao-sem-limites", sex: "homem-aranha-acao-sem-limites", sab: "o-espetacular-homem-aranha-2008-dublado_202606", dom: "o-espetacular-homem-aranha-2008-dublado_202606"
       },
-      horarioInicio: "08:30", duracaoMinutos: 30 
+      horarioInicio: "09:00", duracaoMinutos: 30 
     },
-    { idArchive: "X-MenTheAnimatedSeriesDublado", nomePrograma: "X-Men: A Série Animada", horarioInicio: "09:00", duracaoMinutos: 30 },
-    { idArchive: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501", nomePrograma: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", horarioInicio: "09:30", duracaoMinutos: 30 },
-    { idArchive: "os-vingadores-unidos-dublado", nomePrograma: "Vingadores Unidos", horarioInicio: "10:00", duracaoMinutos: 30 },
+    { idArchive: "ultimate-homem-aranha-dublado", nomePrograma: "Ultimate Homem-Aranha", horarioInicio: "09:30", duracaoMinutos: 30 },
+    { idArchive: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501", nomePrograma: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", horarioInicio: "10:00", duracaoMinutos: 30 },
+    { idArchive: "os-vingadores-unidos-dublado", nomePrograma: "Vingadores Unidos", horarioInicio: "10:30", duracaoMinutos: 30 },
     { 
       nomePrograma: {
         seg: "Super Choque", ter: "Super Choque", qua: "Super Choque", qui: "Super Choque", sex: "Super Choque", sab: "Super Choque", dom: "O Que Há de Novo, Scooby-Doo?"
@@ -223,12 +223,12 @@
         seg: "PaixaoFlix-Super-Choque-Completo", ter: "PaixaoFlix-Super-Choque-Completo", qua: "PaixaoFlix-Super-Choque-Completo",
         qui: "PaixaoFlix-Super-Choque-Completo", sex: "PaixaoFlix-Super-Choque-Completo", sab: "PaixaoFlix-Super-Choque-Completo", dom: "o-que-ha-de-novo-scooby-doo-1-temp"
       },
-      horarioInicio: "10:30", duracaoMinutos: 30 
+      horarioInicio: "11:00", duracaoMinutos: 30 
     },
-    { idArchive: "e.-p.-c-s-01-e-09-terminando-e-quebrando-720p", nomePrograma: "Eu, A Patroa e as Crianças", horarioInicio: "11:00", duracaoMinutos: 30 },
+    { idArchive: "e.-p.-c-s-01-e-09-terminando-e-quebrando-720p", nomePrograma: "Eu, A Patroa e as Crianças", horarioInicio: "11:30", duracaoMinutos: 30 },
 
-    // === TURNO DA TARDE (11:30 - 16:30) ===
-    { idArchive: "um-maluco-no-pedaco-6x-18", nomePrograma: "Um Maluco no Pedaço", horarioInicio: "11:30", duracaoMinutos: 30 },
+    // === TURNO DA TARDE (12:00 - 16:30) ===
+    { idArchive: "um-maluco-no-pedaco-6x-18", nomePrograma: "Um Maluco no Pedaço", horarioInicio: "12:00", duracaoMinutos: 30 },
     { 
       idArchive: [
         "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-1-Temporada",
@@ -236,73 +236,100 @@
         "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-3-Temporada",
         "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-4-Temporada"
       ], 
-      nomePrograma: "Todo Mundo Odeia o Chris", horarioInicio: "12:00", duracaoMinutos: 30 
+      nomePrograma: "Todo Mundo Odeia o Chris", horarioInicio: "12:30", duracaoMinutos: 30 
     },
-    { idArchive: "disneymickeypatetadonaldplutoclassicos", nomePrograma: "Clássicos Disney (Mickey, Donald e Pluto)", horarioInicio: "12:30", duracaoMinutos: 30 },
-    { idArchive: "mickey-e-donald-a-mina-de-ouro-do-pato-donald", nomePrograma: "Mickey e Donald", horarioInicio: "13:00", duracaoMinutos: 30 },
+    { idArchive: "duck-tales-dublado", nomePrograma: "DuckTales: Os Caçadores de Aventuras", horarioInicio: "13:00", duracaoMinutos: 30 },
+    { 
+      nomePrograma: {
+        seg: "Clássicos Disney", ter: "Clássicos Disney", qua: "Clássicos Disney", qui: "Clássicos Disney", sex: "Mickey e Donald", sab: "Mickey e Donald", dom: "Clássicos Disney"
+      },
+      idArchive: {
+        seg: "disneymickeypatetadonaldplutoclassicos", ter: "disneymickeypatetadonaldplutoclassicos", qua: "disneymickeypatetadonaldplutoclassicos", qui: "disneymickeypatetadonaldplutoclassicos", sex: "mickey-e-donald-a-mina-de-ouro-do-pato-donald", sab: "mickey-e-donald-a-mina-de-ouro-do-pato-donald", dom: "disneymickeypatetadonaldplutoclassicos"
+      },
+      horarioInicio: "13:30", duracaoMinutos: 30 
+    },
     { 
       idArchive: [
         "cavaleirosdozodiaco", "cavaleirosdozodiaco_202107", "cavaleiros.-do.-zodiaco-03-saga-doze-casas", "cavaleiros-do-zodiaco-04-saga-asgard"
       ], 
-      nomePrograma: "Os Cavaleiros do Zodíaco", horarioInicio: "13:30", duracaoMinutos: 30 
+      nomePrograma: "Os Cavaleiros do Zodíaco", horarioInicio: "14:00", duracaoMinutos: 30 
     },
-    { idArchive: "DragonBallCNBR", nomePrograma: "Dragon Ball", horarioInicio: "14:00", duracaoMinutos: 30 },
-    { idArchive: "DBZCN", nomePrograma: "Dragon Ball Z", horarioInicio: "14:30", duracaoMinutos: 30 },
-    { idArchive: "DragonBallGTCNBR", nomePrograma: "Dragon Ball GT", horarioInicio: "15:00", duracaoMinutos: 30 },
-    { idArchive: "DBZKaiCNBR", nomePrograma: "Dragon Ball Z Kai", horarioInicio: "15:30", duracaoMinutos: 30 },
-    { 
-      nomePrograma: {
-        seg: "Dragon Ball Super", ter: "Dragon Ball Super", qua: "Dragon Ball Super", qui: "Dragon Ball Super", sex: "Dragon Ball Super", sab: "Dragon Ball Daima", dom: "Dragon Ball Daima"
-      },
-      idArchive: {
-        seg: "DragonBallSuperCartoonNetworkBR", ter: "DragonBallSuperCartoonNetworkBR", qua: "DragonBallSuperCartoonNetworkBR",
-        qui: "DragonBallSuperCartoonNetworkBR", sex: "DragonBallSuperCartoonNetworkBR", sab: "DragonBallDaimaAdultSwimBrasil", dom: "DragonBallDaimaAdultSwimBrasil"
-      },
-      horarioInicio: "16:00", duracaoMinutos: 30 
-    },
+    { idArchive: "DragonBallCNBR", nomePrograma: "Dragon Ball", horarioInicio: "14:30", duracaoMinutos: 30 },
+    { idArchive: "DBZCN", nomePrograma: "Dragon Ball Z", horarioInicio: "15:00", duracaoMinutos: 30 },
+    { idArchive: "DragonBallGTCNBR", nomePrograma: "Dragon Ball GT", horarioInicio: "15:30", duracaoMinutos: 30 },
+    { idArchive: "DBZKaiCNBR", nomePrograma: "Dragon Ball Z Kai", horarioInicio: "16:00", duracaoMinutos: 30 },
 
     // === TURNO FINAL DA TARDE (16:30 - 19:00) ===
-    { idArchive: "17.-o-dia-da-geladeira_202605", nomePrograma: "A Família Dinossauro", horarioInicio: "16:30", duracaoMinutos: 30 },
+    { 
+      nomePrograma: { sab: "Sai de Baixo" },
+      idArchive: { sab: ["sai-de-baixo", "sdb-4temp"] },
+      horarioInicio: "16:30", duracaoMinutos: 60 
+    },
     { 
       nomePrograma: {
-        seg: "A Grande Família", ter: "Sai de Baixo", qua: "A Grande Família", qui: "Sai de Baixo", sex: "A Grande Família", sab: "Sai de Baixo", dom: "A Grande Família"
+        seg: "Dragon Ball Super", ter: "Dragon Ball Super", qua: "Dragon Ball Daima", qui: "Dragon Ball Super", sex: "Dragon Ball Super", dom: "Dragon Ball Super"
       },
       idArchive: {
-        seg: "a-grande-familia-dvd", ter: ["sai-de-baixo", "sdb-4temp"], qua: "a-grande-familia-dvd", qui: ["sai-de-baixo", "sdb-4temp"], sex: "a-grande-familia-dvd", sab: ["sai-de-baixo", "sdb-4temp"], dom: "a-grande-familia-dvd"
+        seg: "DragonBallSuperCartoonNetworkBR", ter: "DragonBallSuperCartoonNetworkBR", qua: "DragonBallDaimaAdultSwimBrasil",
+        qui: "DragonBallSuperCartoonNetworkBR", sex: "DragonBallSuperCartoonNetworkBR", dom: "DragonBallSuperCartoonNetworkBR"
+      },
+      horarioInicio: "16:30", duracaoMinutos: 30 
+    },
+    { 
+      nomePrograma: {
+        seg: "A Família Dinossauro", ter: "A Família Dinossauro", qua: "A Família Dinossauro", qui: "A Família Dinossauro", sex: "A Família Dinossauro", dom: "A Grande Família"
+      },
+      idArchive: {
+        seg: "17.-o-dia-da-geladeira_202605", ter:"17.-o-dia-da-geladeira_202605", qua: "17.-o-dia-da-geladeira_202605", qui: "17.-o-dia-da-geladeira_202605", sex: "17.-o-dia-da-geladeira_202605", dom: "a-grande-familia-dvd"
       },
       horarioInicio: "17:00", duracaoMinutos: 30 
     },
     { idArchive: "power-rangers-br", nomePrograma: "Power Rangers", horarioInicio: "17:30", duracaoMinutos: 30 },
     { 
       nomePrograma: {
-        seg: "Power Rangers Dino Trovão", ter: "Power Rangers Dino Trovão", qua: "Power Rangers Dino Trovão", qui: "Power Rangers Dino Trovão", sex: "Power Rangers Dino Trovão", sab: "Power Rangers", dom: "Power Rangers"
+        seg: "Power Rangers: Resgate na Velocidade da Luz", ter: "Power Rangers Dino Trovão", qua: "Power Rangers: Resgate na Velocidade da Luz", qui: "Power Rangers Dino Trovão", sex: "Power Rangers: Resgate na Velocidade da Luz", sab: "Power Rangers Dino Trovão", dom: "Power Rangers: Resgate na Velocidade da Luz"
       },
       idArchive: {
-        seg: "power-rangers-dino-trovao-episodios", ter: "power-rangers-dino-trovao-episodios", qua: "power-rangers-dino-trovao-episodios", qui: "power-rangers-dino-trovao-episodios", sex: "power-rangers-dino-trovao-episodios", sab: "power-rangers-br", dom: "power-rangers-br"
+        seg: "40_20250503_202505", ter: "power-rangers-dino-trovao-episodios", qua: "40_20250503_202505", qui: "power-rangers-dino-trovao-episodios", sex: "40_20250503_202505", sab: "power-rangers-dino-trovao-episodios", dom: "40_20250503_202505"
       },
       horarioInicio: "18:00", duracaoMinutos: 30 
     },
     { idArchive: "NarutoCNBR", nomePrograma: "Naruto Clássico", horarioInicio: "18:30", duracaoMinutos: 30 },
 
-    // === TURNO DA NOITE (19:00 - 22:00) ===
+    // === TURNO DA NOITE (19:00 - 23:00) ===
     { idArchive: "naruto-shippuuden-021-720p", nomePrograma: "Naruto Shippuden", horarioInicio: "19:00", duracaoMinutos: 30 },
     { idArchive: "2000-yu-gi-oh-s-01", nomePrograma: "Yu-Gi-Oh!", horarioInicio: "19:30", duracaoMinutos: 30 },
     { idArchive: "fullmetal-completo-pt-br", nomePrograma: "Fullmetal Alchemist", horarioInicio: "20:00", duracaoMinutos: 30 },
     { idArchive: "hunter-x-hunter-1999-pt-br-004", nomePrograma: "Hunter x Hunter (1999)", horarioInicio: "20:30", duracaoMinutos: 30 },
+    
+    // Kenan & Kel fixo todos os dias às 21:00
     { 
-      idArchive: [
-        "PaixaoFlix-1-Temp", "PaixaoFlix-2-Temp", "PaixaoFlix-Kenan-e-Kel-3oTemp", "PaixaoFlix-Kenan-e-Kel-4oTemp"
-      ], 
-      nomePrograma: "Kenan & Kel", horarioInicio: "21:00", duracaoMinutos: 30 
+      idArchive: ["PaixaoFlix-1-Temp", "PaixaoFlix-2-Temp", "PaixaoFlix-Kenan-e-Kel-3oTemp", "PaixaoFlix-Kenan-e-Kel-4oTemp"],
+      nomePrograma: "Kenan & Kel", 
+      horarioInicio: "21:00", 
+      duracaoMinutos: 30 
     },
+    
+    // Bloco Batman às 21:30
     { 
       nomePrograma: {
-        seg: "Batman: Os Bravos e os Destemidos", ter: "Batman: A Série Animada", qua: "Batman: Os Bravos e os Destemidos", qui: "Batman: A Série Animada", sex: "Batman: Os Bravos e os Destemidos", sab: "Batman: A Série Animada", dom: "Batman: Os Bravos e os Destemidos"
+        seg: "Batman: Os Bravos e os Destemidos", ter: "Batman: Os Bravos e os Destemidos", qua: "Batman: Os Bravos e os Destemidos", qui: "Batman: Os Bravos e os Destemidos", sex: "Batman: Os Bravos e os Destemidos", sab: "Batman: A Série Animada", dom: "Batman: Os Bravos e os Destemidos"
       },
       idArchive: {
-        seg: "batman-os-bravos-e-destemidos-2008-2011", ter: "batman-a-serie-animada-dublada-pt-br", qua: "batman-os-bravos-e-destemidos-2008-2011", qui: "batman-a-serie-animada-dublada-pt-br", sex: "batman-os-bravos-e-destemidos-2008-2011", sab: "batman-a-serie-animada-dublada-pt-br", dom: "batman-os-bravos-e-destemidos-2008-2011"
+        seg: "batman-os-bravos-e-destemidos-2008-2011", ter: "batman-os-bravos-e-destemidos-2008-2011", qua: "batman-os-bravos-e-destemidos-2008-2011", qui: "batman-os-bravos-e-destemidos-2008-2011", sex: "batman-os-bravos-e-destemidos-2008-2011", sab: "batman-a-serie-animada-dublada-pt-br", dom: "batman-os-bravos-e-destemidos-2008-2011"
       },
       horarioInicio: "21:30", duracaoMinutos: 30 
+    },
+    { idArchive: "fut01", nomePrograma: "Futurama", horarioInicio: "22:00", duracaoMinutos: 30 },
+
+    { 
+      nomePrograma: {
+        seg: "Batman do Futuro", ter: "Batman do Futuro", qua: "Batman do Futuro", qui: "Batman do Futuro", sex: "Invencível", sab: "Batman do Futuro", dom: "Batman do Futuro"
+      },
+      idArchive: {
+        seg: "desenhos-004-batman-do-futuro-batman-beyond-19992001", ter: "desenhos-004-batman-do-futuro-batman-beyond-19992001", qua: "desenhos-004-batman-do-futuro-batman-beyond-19992001", qui: "desenhos-004-batman-do-futuro-batman-beyond-19992001", sex: "invenciveldublado", sab: "desenhos-004-batman-do-futuro-batman-beyond-19992001", dom: "desenhos-004-batman-do-futuro-batman-beyond-19992001"
+      },
+      horarioInicio: "22:30", duracaoMinutos: 30 
     }
   ];
 
@@ -427,7 +454,7 @@
     gradeAutomated = resultadosGerais.filter(item => item !== null).sort((a, b) => a.m - b.m);
 
     gradeAutomated.forEach((item, idx) => {
-      item.proximo = gradeAutomated[idx + 1] ? `${gradeAutomated[idx + 1].h} - ${gradeAutomated[idx + 1].n}` : "22:00 - Transmissão Encerrada";
+      item.proximo = gradeAutomated[idx + 1] ? `${gradeAutomated[idx + 1].h} - ${gradeAutomated[idx + 1].n}` : "23:00 - Transmissão Encerrada";
     });
     
     const player = document.getElementById('player');
@@ -459,7 +486,7 @@
     const agora = new Date();
     const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
 
-    if (minutosHoje >= horaParaMinutos("22:00") || minutosHoje < horaParaMinutos("07:00")) {
+    if (minutosHoje >= horaParaMinutos("23:00") || minutosHoje < horaParaMinutos("07:00")) {
       encerrarSinalMadrugada();
       return;
     }
@@ -518,7 +545,7 @@
     const proximoIndice = indiceAtual + 1;
     const proximoPrograma = gradeAutomated[proximoIndice];
 
-    if (proximoPrograma && segundosHoje < (horaParaMinutos("22:00") * 60)) {
+    if (proximoPrograma && segundosHoje < (horaParaMinutos("23:00") * 60)) {
       if (segundosHoje < (proximoPrograma.m * 60)) {
         exibirTelaIntervalo(proximoPrograma);
       } else {
