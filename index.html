@@ -554,6 +554,7 @@
     }
   }
 
+  // FUNÇÃO ATUALIZADA: Seleção Inteligente de Duração
   function tocarProximoEpisodioSemCorte() {
     const agora = new Date();
     const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
@@ -563,19 +564,43 @@
       const segundosRestantesNoBloco = (programaAtual.mFim * 60) - segundosHoje;
 
       if (programaAtual.listaEpisodios && programaAtual.listaEpisodios.length > 1) {
-        const proximoEpIndex = (programaAtual.epIndexAtual + 1) % programaAtual.listaEpisodios.length;
-        const proximoEp = programaAtual.listaEpisodios[proximoEpIndex];
+        
+        let epEncontradoIndex = -1;
 
-        const duracaoProximoEp = proximoEp.duracao > 0 ? proximoEp.duracao : 420;
+        // 1º PASSO: Verifica se o próximo episódio da sequência normal cabe no tempo restante
+        const proximoIndexPadrao = (programaAtual.epIndexAtual + 1) % programaAtual.listaEpisodios.length;
+        const proximoEpPadrao = programaAtual.listaEpisodios[proximoIndexPadrao];
+        const duracaoPadrao = proximoEpPadrao.duracao > 0 ? proximoEpPadrao.duracao : 420;
 
-        if (duracaoProximoEp <= segundosRestantesNoBloco) {
-          programaAtual.epIndexAtual = proximoEpIndex;
-          programaAtual.u = proximoEp.url;
-          console.log(`✅ O próximo curta tem ${Math.round(duracaoProximoEp/60)} min e CABE nos ${Math.round(segundosRestantesNoBloco/60)} min restantes. Reproduzindo...`);
+        if (duracaoPadrao <= segundosRestantesNoBloco) {
+          epEncontradoIndex = proximoIndexPadrao;
+        } else {
+          // 2º PASSO (Seleção Inteligente): O próximo da fila excede o tempo restante.
+          // Busca em toda a lista de episódios do programa um que caiba exatamente no tempo que sobra.
+          console.log(`⚠️ O próximo episódio (${Math.round(duracaoPadrao/60)} min) excede os ${Math.round(segundosRestantesNoBloco/60)} min restantes. Procurando um menor...`);
+          
+          for (let i = 0; i < programaAtual.listaEpisodios.length; i++) {
+            const testEp = programaAtual.listaEpisodios[i];
+            const duracaoTest = testEp.duracao > 0 ? testEp.duracao : 420;
+
+            if (duracaoTest <= segundosRestantesNoBloco) {
+              epEncontradoIndex = i;
+              break;
+            }
+          }
+        }
+
+        // Se um episódio compatível foi encontrado
+        if (epEncontradoIndex !== -1) {
+          programaAtual.epIndexAtual = epEncontradoIndex;
+          programaAtual.u = programaAtual.listaEpisodios[epEncontradoIndex].url;
+          console.log(`✅ Tocando episódio index [${epEncontradoIndex}] que cabe nos ${Math.round(segundosRestantesNoBloco/60)} min restantes.`);
+          
           executarMidia(indiceAtual, false);
           return;
         } else {
-          console.log(`🛑 O próximo curta tem ${Math.round(duracaoProximoEp/60)} min e NÃO CABE nos ${Math.round(segundosRestantesNoBloco/60)} min restantes. Chamando o intervalo...`);
+          // Nenhum episódio cabe no tempo restante -> Ativa a tela de intervalo
+          console.log(`🛑 Nenhum episódio cabe nos ${Math.round(segundosRestantesNoBloco/60)} min restantes. Indo para o intervalo...`);
           const proximoPrograma = gradeAutomated[indiceAtual + 1];
           if (proximoPrograma) {
             exibirTelaIntervalo(proximoPrograma);
@@ -585,6 +610,7 @@
       }
     }
 
+    // Transição padrão de bloco ou encerramento
     const proximoIndice = indiceAtual + 1;
     const proximoPrograma = gradeAutomated[proximoIndice];
 
