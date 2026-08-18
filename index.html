@@ -166,7 +166,7 @@
     </div>
 
     <div class="painel-dev">
-      ⚙️ <b>Sinal Sincronizado:</b> Reconexão Automática Contínua Ativa | Fallback de Proxy | Timeout: 60s
+      ⚠️ <b>Atenção:</b> Qualquer problema informe ao administrador | Algum vídeo pode apresentar idioma diferente | Alguns vídeos da programação pode não iniciar por problema no servidor, pode aguardar iniciar automaticamente
     </div>
   </div>
 
@@ -224,8 +224,8 @@
     },
     { 
       nomePrograma: {
-        seg: "X-men: A Série Animada", ter: "X-men: A Série Animada", qua: "X-men: A Série Animada",
-        qui: "X-men: A Série Animada", sex: "X-men: A Série Animada", sab: "Homem-Aranha: A Nova Série Animada", dom: "X-men: A Série Animada"
+        seg: "X-Men: A Série Animada", ter: "X-Men: A Série Animada", qua: "X-Men: A Série Animada",
+        qui: "X-Men: A Série Animada", sex: "X-Men: A Série Animada", sab: "Homem-Aranha: A Nova Série Animada", dom: "X-Men: A Série Animada"
       },
       idArchive: {
         seg: "X-MenTheAnimatedSeriesDublado", ter: "X-MenTheAnimatedSeriesDublado", qua: "X-MenTheAnimatedSeriesDublado",
@@ -233,7 +233,17 @@
       },
       horarioInicio: "09:30", duracaoMinutos: 30 
     },
-    { idArchive: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501", nomePrograma: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", horarioInicio: "10:00", duracaoMinutos: 30 },
+    { 
+      nomePrograma: {
+        seg: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", ter: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", qua: "Os Vingadores: A Série",
+        qui: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", sex: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", sab: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", dom: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra"
+      },
+      idArchive: {
+        seg: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501", ter: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501", qua: "os-vingadores-a-serie-dublado",
+        qui: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501", sex: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501", sab: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501", dom: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501"
+      },
+      horarioInicio: "10:00", duracaoMinutos: 30 
+    },
     { idArchive: "os-vingadores-unidos-dublado", nomePrograma: "Vingadores Unidos", horarioInicio: "10:30", duracaoMinutos: 30 },
     { 
       nomePrograma: {
@@ -320,17 +330,21 @@
     { idArchive: "naruto-shippuuden-021-720p", nomePrograma: "Naruto Shippuden", horarioInicio: "19:00", duracaoMinutos: 30 },
     { idArchive: "2000-yu-gi-oh-s-01", nomePrograma: "Yu-Gi-Oh!", horarioInicio: "19:30", duracaoMinutos: 30 },
     { idArchive: "fullmetal-completo-pt-br", nomePrograma: "Fullmetal Alchemist", horarioInicio: "20:00", duracaoMinutos: 30 },
-    { idArchive: "hunter-x-hunter-1999-pt-br-004", nomePrograma: "Hunter x Hunter (1999)", horarioInicio: "20:30", duracaoMinutos: 30 },
-    
-    // Kenan & Kel fixo todos os dias às 21:00
+    { 
+      nomePrograma: {
+        seg: "Yu Yu Hakusho", ter: "Hunter x Hunter (1999)", qua: "Yu Yu Hakusho", qui: "Hunter x Hunter (1999)", sex: "Yu Yu Hakusho", sab: "Hunter x Hunter (1999)", dom: "Yu Yu Hakusho"
+      },
+      idArchive: {
+        seg: "YuYuHakushoDublado", ter: "hunter-x-hunter-1999-pt-br-004", qua: "YuYuHakushoDublado", qui: "hunter-x-hunter-1999-pt-br-004", sex: "YuYuHakushoDublado", sab: "hunter-x-hunter-1999-pt-br-004", dom: "YuYuHakushoDublado"
+      },
+      horarioInicio: "20:30", duracaoMinutos: 30 
+    },    
     { 
       idArchive: ["PaixaoFlix-1-Temp", "PaixaoFlix-2-Temp", "PaixaoFlix-Kenan-e-Kel-3oTemp", "PaixaoFlix-Kenan-e-Kel-4oTemp"],
       nomePrograma: "Kenan & Kel", 
       horarioInicio: "21:00", 
       duracaoMinutos: 30 
-    },
-    
-    // Bloco Batman às 21:30
+    },    
     { 
       nomePrograma: {
         seg: "Batman: Os Bravos e os Destemidos", ter: "Batman: Os Bravos e os Destemidos", qua: "Batman: Os Bravos e os Destemidos", qui: "Batman: Os Bravos e os Destemidos", sex: "Batman: Os Bravos e os Destemidos", sab: "Batman: A Série Animada", dom: "Batman: Os Bravos e os Destemidos"
@@ -409,7 +423,16 @@
               arquivos = dadosMeta.files.filter(f => f.name && f.name.toLowerCase().endsWith('.mp4') && !f.name.endsWith('_thumb.mp4'));
             }
             
-            let eps = arquivos.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+            let eps = arquivos
+              .filter(f => {
+                // Filtro exclusivo para Yu Yu Hakusho: remove vídeos com mais de 45 minutos (2700s)
+                if (id === "YuYuHakushoDublado") {
+                  const dur = converterParaSegundos(f.length);
+                  if (dur > 2700) return false;
+                }
+                return true;
+              })
+              .sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
 
             return eps.map(f => ({
               titulo: f.title || f.name.replace(/\.mp4$/i, ''),
