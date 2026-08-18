@@ -430,6 +430,13 @@
                   const dur = converterParaSegundos(f.length);
                   if (dur > 2700) return false;
                 }
+
+                // Filtro exclusivo para A Grande Família: remove vídeos menores que 25 minutos (1500s) - extras do DVD
+                if (id === "a-grande-familia-dvd") {
+                  const dur = converterParaSegundos(f.length);
+                  if (dur < 1500) return false;
+                }
+
                 return true;
               })
               .sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
