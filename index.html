@@ -434,6 +434,11 @@
               })
               .sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
 
+            // Filtro exclusivo para Naruto Shippuden: limita a no máximo 79 episódios
+            if (id === "naruto-shippuuden-021-720p") {
+              eps = eps.slice(0, 79);
+            }
+
             return eps.map(f => ({
               titulo: f.title || f.name.replace(/\.mp4$/i, ''),
               url: `https://archive.org/download/${id}/${encodeURIComponent(f.name)}`,
