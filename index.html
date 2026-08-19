@@ -195,174 +195,175 @@
 
   const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
 
+  // === GRADE DE PROGRAMAÇÃO REORGANIZADA NOS NOVOS 4 BLOCOS ===
   const programacaoConfig = [
-    // === TURNO DA MANHÃ (07:00 - 11:30) ===
-    { idArchive: "coragemcaocovarde-backup", nomePrograma: "Coragem, o Cão Covarde", horarioInicio: "07:00", duracaoMinutos: 30 },
-    { idArchive: "as-aventuras-de-jackie-chan-Completo-paixaoflix", nomePrograma: "As Aventuras de Jackie Chan", horarioInicio: "07:30", duracaoMinutos: 30 },
-    { idArchive: "caverna-do-dragao-1983-480p", nomePrograma: "Caverna do Dragão", horarioInicio: "08:00", duracaoMinutos: 30 },
-    { 
-      nomePrograma: {
-        seg: "Homem-Aranha: A Série Animada (1994)", ter: "Homem-Aranha: A Série Animada (1994)", qua: "Homem-Aranha: A Série Animada (1994)",
-        qui: "Homem-Aranha: A Série Animada (1994)", sex: "Homem-Aranha: A Série Animada (1994)", sab: "Homem-Aranha: Ação Sem Limites", dom: "Homem-Aranha: A Série Animada (1994)"
-      },
-      idArchive: {
-        seg: "homem-aranhaaserieanimada", ter: "homem-aranhaaserieanimada", qua: "homem-aranhaaserieanimada",
-        qui: "homem-aranhaaserieanimada", sex: "homem-aranhaaserieanimada", sab: "homem-aranha-acao-sem-limites", dom: "homem-aranhaaserieanimada"
-      },
-      horarioInicio: "08:30", duracaoMinutos: 30 
+    {
+      nomeBloco: "Manhã Animada",
+      horarioInicio: "07:00",
+      duracaoMinutos: 270, // 07:00 às 11:30 (4h30 - 270 min)
+      atracoes: [
+        { nomePrograma: "Coragem, o Cão Covarde", idArchive: "coragemcaocovarde-backup" },
+        { nomePrograma: "As Aventuras de Jackie Chan", idArchive: "as-aventuras-de-jackie-chan-Completo-paixaoflix" },
+        { nomePrograma: "Caverna do Dragão", idArchive: "caverna-do-dragao-1983-480p" },
+        { 
+          nomePrograma: {
+            seg: "Homem-Aranha: A Série Animada (1994)", ter: "Homem-Aranha: A Série Animada (1994)", qua: "Homem-Aranha: A Série Animada (1994)",
+            qui: "Homem-Aranha: A Série Animada (1994)", sex: "Homem-Aranha: A Série Animada (1994)", sab: "Homem-Aranha: Ação Sem Limites", dom: "Homem-Aranha: A Série Animada (1994)"
+          },
+          idArchive: {
+            seg: "homem-aranhaaserieanimada", ter: "homem-aranhaaserieanimada", qua: "homem-aranhaaserieanimada",
+            qui: "homem-aranhaaserieanimada", sex: "homem-aranhaaserieanimada", sab: "homem-aranha-acao-sem-limites", dom: "homem-aranhaaserieanimada"
+          }
+        },
+        { 
+          nomePrograma: {
+            seg: "Ultimate Homem-Aranha", ter: "Ultimate Homem-Aranha", qua: "Ultimate Homem-Aranha",
+            qui: "Ultimate Homem-Aranha", sex: "Ultimate Homem-Aranha", sab: "O Espetacular Homem-Aranha", dom: "Ultimate Homem-Aranha"
+          },
+          idArchive: {
+            seg: "ultimate-homem-aranha-dublado", ter: "ultimate-homem-aranha-dublado", qua: "ultimate-homem-aranha-dublado",
+            qui: "ultimate-homem-aranha-dublado", sex: "ultimate-homem-aranha-dublado", sab: "o-espetacular-homem-aranha-2008-dublado_202606", dom: "ultimate-homem-aranha-dublado"
+          }
+        },
+        { 
+          nomePrograma: {
+            seg: "X-Men: A Série Animada", ter: "X-Men: A Série Animada", qua: "X-Men: A Série Animada",
+            qui: "X-Men: A Série Animada", sex: "X-Men: A Série Animada", sab: "Homem-Aranha: A Nova Série Animada", dom: "X-Men: A Série Animada"
+          },
+          idArchive: {
+            seg: "X-MenTheAnimatedSeriesDublado", ter: "X-MenTheAnimatedSeriesDublado", qua: "X-MenTheAnimatedSeriesDublado",
+            qui: "X-MenTheAnimatedSeriesDublado", sex: "X-MenTheAnimatedSeriesDublado", sab: "homem-aranha-a-nova-serie-animada-dublado", dom: "X-MenTheAnimatedSeriesDublado"
+          }
+        },
+        { 
+          nomePrograma: {
+            seg: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", ter: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", qua: "Os Vingadores: A Série",
+            qui: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", sex: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", sab: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", dom: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra"
+          },
+          idArchive: {
+            seg: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501", ter: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501", qua: "os-vingadores-a-serie-dublado",
+            qui: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501", sex: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501", sab: "desenhos-os-vingadores-os-super-herois-mais-ponderosos-da-terra-2010-2012_202501", dom: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501"
+          }
+        },
+        { nomePrograma: "Vingadores Unidos", idArchive: "os-vingadores-unidos-dublado" },
+        { 
+          nomePrograma: {
+            seg: "Super Choque", ter: "Super Choque", qua: "Super Choque", qui: "Super Choque", sex: "Super Choque", sab: "Super Choque", dom: "O Que Há de Novo, Scooby-Doo?"
+          },
+          idArchive: {
+            seg: "PaixaoFlix-Super-Choque-Completo", ter: "PaixaoFlix-Super-Choque-Completo", qua: "PaixaoFlix-Super-Choque-Completo",
+            qui: "PaixaoFlix-Super-Choque-Completo", sex: "PaixaoFlix-Super-Choque-Completo", sab: "PaixaoFlix-Super-Choque-Completo", dom: "o-que-ha-de-novo-scooby-doo-1-temp"
+          }
+        }
+      ]
     },
-    { 
-      nomePrograma: {
-        seg: "Ultimate Homem-Aranha", ter: "Ultimate Homem-Aranha", qua: "Ultimate Homem-Aranha",
-        qui: "Ultimate Homem-Aranha", sex: "Ultimate Homem-Aranha", sab: "O Espetacular Homem-Aranha", dom: "Ultimate Homem-Aranha"
-      },
-      idArchive: {
-        seg: "ultimate-homem-aranha-dublado", ter: "ultimate-homem-aranha-dublado", qua: "ultimate-homem-aranha-dublado",
-        qui: "ultimate-homem-aranha-dublado", sex: "ultimate-homem-aranha-dublado", sab: "o-espetacular-homem-aranha-2008-dublado_202606", dom: "ultimate-homem-aranha-dublado"
-      },
-      horarioInicio: "09:00", duracaoMinutos: 30 
+    {
+      nomeBloco: "Hora do Almoço",
+      horarioInicio: "11:30",
+      duracaoMinutos: 120, // 11:30 às 13:30 (2h - 120 min)
+      atracoes: [
+        { nomePrograma: "Eu, A Patroa e as Crianças", idArchive: "e.-p.-c-s-01-e-09-terminando-e-quebrando-720p" },
+        { nomePrograma: "Um Maluco no Pedaço", idArchive: "um-maluco-no-pedaco-6x-18" },
+        { 
+          nomePrograma: "Todo Mundo Odeia o Chris",
+          idArchive: [
+            "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-1-Temporada",
+            "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-2-Temporada",
+            "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-3-Temporada",
+            "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-4-Temporada"
+          ]
+        }
+      ]
     },
-    { 
-      nomePrograma: {
-        seg: "X-Men: A Série Animada", ter: "X-Men: A Série Animada", qua: "X-Men: A Série Animada",
-        qui: "X-Men: A Série Animada", sex: "X-Men: A Série Animada", sab: "Homem-Aranha: A Nova Série Animada", dom: "X-Men: A Série Animada"
-      },
-      idArchive: {
-        seg: "X-MenTheAnimatedSeriesDublado", ter: "X-MenTheAnimatedSeriesDublado", qua: "X-MenTheAnimatedSeriesDublado",
-        qui: "X-MenTheAnimatedSeriesDublado", sex: "X-MenTheAnimatedSeriesDublado", sab: "homem-aranha-a-nova-serie-animada-dublado", dom: "X-MenTheAnimatedSeriesDublado"
-      },
-      horarioInicio: "09:30", duracaoMinutos: 30 
+    {
+      nomeBloco: "Animes e Clássicos da Tarde",
+      horarioInicio: "13:30",
+      duracaoMinutos: 330, // 13:30 às 19:00 (5h30 - 330 min)
+      atracoes: [
+        { nomePrograma: "DuckTales: Os Caçadores de Aventuras", idArchive: "duck-tales-dublado" },
+        { 
+          nomePrograma: {
+            seg: "Clássicos Disney", ter: "Clássicos Disney", qua: "Clássicos Disney", qui: "Clássicos Disney", sex: "Mickey e Donald", sab: "Mickey e Donald", dom: "Clássicos Disney"
+          },
+          idArchive: {
+            seg: "disneymickeypatetadonaldplutoclassicos", ter: "disneymickeypatetadonaldplutoclassicos", qua: "disneymickeypatetadonaldplutoclassicos", qui: "disneymickeypatetadonaldplutoclassicos", sex: "mickey-e-donald-a-mina-de-ouro-do-pato-donald", sab: "mickey-e-donald-a-mina-de-ouro-do-pato-donald", dom: "disneymickeypatetadonaldplutoclassicos"
+          }
+        },
+        { 
+          nomePrograma: "Os Cavaleiros do Zodíaco",
+          idArchive: ["cavaleirosdozodiaco", "cavaleirosdozodiaco_202107", "cavaleiros.-do.-zodiaco-03-saga-doze-casas", "cavaleiros-do-zodiaco-04-saga-asgard"]
+        },
+        { nomePrograma: "Dragon Ball", idArchive: "DragonBallCNBR" },
+        { nomePrograma: "Dragon Ball Z", idArchive: "DBZCN" },
+        { nomePrograma: "Dragon Ball GT", idArchive: "DragonBallGTCNBR" },
+        { nomePrograma: "Dragon Ball Z Kai", idArchive: "DBZKaiCNBR" },
+        { 
+          nomePrograma: {
+            seg: "Dragon Ball Super", ter: "Dragon Ball Super", qua: "Dragon Ball Daima", qui: "Dragon Ball Super", sex: "Dragon Ball Super", sab: "Sai de Baixo", dom: "Dragon Ball Super"
+          },
+          idArchive: {
+            seg: "DragonBallSuperCartoonNetworkBR", ter: "DragonBallSuperCartoonNetworkBR", qua: "DragonBallDaimaAdultSwimBrasil",
+            qui: "DragonBallSuperCartoonNetworkBR", sex: "DragonBallSuperCartoonNetworkBR", sab: ["sai-de-baixo", "sdb-4temp"], dom: "DragonBallSuperCartoonNetworkBR"
+          }
+        },
+        { 
+          nomePrograma: {
+            seg: "A Família Dinossauro", ter: "A Família Dinossauro", qua: "A Família Dinossauro", qui: "A Família Dinossauro", sex: "A Família Dinossauro", sab: "A Família Dinossauro", dom: "A Grande Família"
+          },
+          idArchive: {
+            seg: "17.-o-dia-da-geladeira_202605", ter:"17.-o-dia-da-geladeira_202605", qua: "17.-o-dia-da-geladeira_202605", qui: "17.-o-dia-da-geladeira_202605", sex: "17.-o-dia-da-geladeira_202605", sab: "17.-o-dia-da-geladeira_202605", dom: "a-grande-familia-dvd"
+          }
+        },
+        { nomePrograma: "Power Rangers", idArchive: "power-rangers-br" },
+        { 
+          nomePrograma: {
+            seg: "Power Rangers: Resgate na Velocidade da Luz", ter: "Power Rangers Dino Trovão", qua: "Power Rangers: Resgate na Velocidade da Luz", qui: "Power Rangers Dino Trovão", sex: "Power Rangers: Resgate na Velocidade da Luz", sab: "Power Rangers Dino Trovão", dom: "Power Rangers: Resgate na Velocidade da Luz"
+          },
+          idArchive: {
+            seg: "40_20250503_202505", ter: "power-rangers-dino-trovao-episodios", qua: "40_20250503_202505", qui: "power-rangers-dino-trovao-episodios", sex: "40_20250503_202505", sab: "power-rangers-dino-trovao-episodios", dom: "40_20250503_202505"
+          }
+        },
+        { nomePrograma: "Naruto Clássico", idArchive: "NarutoCNBR" }
+      ]
     },
-    { 
-      nomePrograma: {
-        seg: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", ter: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", qua: "Os Vingadores: A Série",
-        qui: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", sex: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", sab: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", dom: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra"
-      },
-      idArchive: {
-        seg: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501", ter: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501", qua: "os-vingadores-a-serie-dublado",
-        qui: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501", sex: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501", sab: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501", dom: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501"
-      },
-      horarioInicio: "10:00", duracaoMinutos: 30 
-    },
-    { idArchive: "os-vingadores-unidos-dublado", nomePrograma: "Vingadores Unidos", horarioInicio: "10:30", duracaoMinutos: 30 },
-    { 
-      nomePrograma: {
-        seg: "Super Choque", ter: "Super Choque", qua: "Super Choque", qui: "Super Choque", sex: "Super Choque", sab: "Super Choque", dom: "O Que Há de Novo, Scooby-Doo?"
-      },
-      idArchive: {
-        seg: "PaixaoFlix-Super-Choque-Completo", ter: "PaixaoFlix-Super-Choque-Completo", qua: "PaixaoFlix-Super-Choque-Completo",
-        qui: "PaixaoFlix-Super-Choque-Completo", sex: "PaixaoFlix-Super-Choque-Completo", sab: "PaixaoFlix-Super-Choque-Completo", dom: "o-que-ha-de-novo-scooby-doo-1-temp"
-      },
-      horarioInicio: "11:00", duracaoMinutos: 30 
-    },
-
-    // === HORA DO ALMOÇO (11:30 - 13:30) ===
-    { idArchive: "e.-p.-c-s-01-e-09-terminando-e-quebrando-720p", nomePrograma: "Eu, A Patroa e as Crianças", horarioInicio: "11:30", duracaoMinutos: 30 },
-    { idArchive: "um-maluco-no-pedaco-6x-18", nomePrograma: "Um Maluco no Pedaço", horarioInicio: "12:00", duracaoMinutos: 30 },
-    { 
-      idArchive: [
-        "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-1-Temporada",
-        "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-2-Temporada",
-        "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-3-Temporada",
-        "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-4-Temporada"
-      ], 
-      nomePrograma: "Todo Mundo Odeia o Chris", horarioInicio: "12:30", duracaoMinutos: 30 
-    },
-    { idArchive: "duck-tales-dublado", nomePrograma: "DuckTales: Os Caçadores de Aventuras", horarioInicio: "13:00", duracaoMinutos: 30 },
-
-    // === ANIMES E CLÁSSICOS DA TARDE (13:30 - 19:00) ===
-    { 
-      nomePrograma: {
-        seg: "Clássicos Disney", ter: "Clássicos Disney", qua: "Clássicos Disney", qui: "Clássicos Disney", sex: "Mickey e Donald", sab: "Mickey e Donald", dom: "Clássicos Disney"
-      },
-      idArchive: {
-        seg: "disneymickeypatetadonaldplutoclassicos", ter: "disneymickeypatetadonaldplutoclassicos", qua: "disneymickeypatetadonaldplutoclassicos", qui: "disneymickeypatetadonaldplutoclassicos", sex: "mickey-e-donald-a-mina-de-ouro-do-pato-donald", sab: "mickey-e-donald-a-mina-de-ouro-do-pato-donald", dom: "disneymickeypatetadonaldplutoclassicos"
-      },
-      horarioInicio: "13:30", duracaoMinutos: 30 
-    },
-    { 
-      idArchive: [
-        "cavaleirosdozodiaco", "cavaleirosdozodiaco_202107", "cavaleiros.-do.-zodiaco-03-saga-doze-casas", "cavaleiros-do-zodiaco-04-saga-asgard"
-      ], 
-      nomePrograma: "Os Cavaleiros do Zodíaco", horarioInicio: "14:00", duracaoMinutos: 30 
-    },
-    { idArchive: "DragonBallCNBR", nomePrograma: "Dragon Ball", horarioInicio: "14:30", duracaoMinutos: 30 },
-    { idArchive: "DBZCN", nomePrograma: "Dragon Ball Z", horarioInicio: "15:00", duracaoMinutos: 30 },
-    { idArchive: "DragonBallGTCNBR", nomePrograma: "Dragon Ball GT", horarioInicio: "15:30", duracaoMinutos: 30 },
-    { idArchive: "DBZKaiCNBR", nomePrograma: "Dragon Ball Z Kai", horarioInicio: "16:00", duracaoMinutos: 30 },
-    { 
-      nomePrograma: { sab: "Sai de Baixo" },
-      idArchive: { sab: ["sai-de-baixo", "sdb-4temp"] },
-      horarioInicio: "16:30", duracaoMinutos: 60 
-    },
-    { 
-      nomePrograma: {
-        seg: "Dragon Ball Super", ter: "Dragon Ball Super", qua: "Dragon Ball Daima", qui: "Dragon Ball Super", sex: "Dragon Ball Super", dom: "Dragon Ball Super"
-      },
-      idArchive: {
-        seg: "DragonBallSuperCartoonNetworkBR", ter: "DragonBallSuperCartoonNetworkBR", qua: "DragonBallDaimaAdultSwimBrasil",
-        qui: "DragonBallSuperCartoonNetworkBR", sex: "DragonBallSuperCartoonNetworkBR", dom: "DragonBallSuperCartoonNetworkBR"
-      },
-      horarioInicio: "16:30", duracaoMinutos: 30 
-    },
-    { 
-      nomePrograma: {
-        seg: "A Família Dinossauro", ter: "A Família Dinossauro", qua: "A Família Dinossauro", qui: "A Família Dinossauro", sex: "A Família Dinossauro", dom: "A Grande Família"
-      },
-      idArchive: {
-        seg: "17.-o-dia-da-geladeira_202605", ter:"17.-o-dia-da-geladeira_202605", qua: "17.-o-dia-da-geladeira_202605", qui: "17.-o-dia-da-geladeira_202605", sex: "17.-o-dia-da-geladeira_202605", dom: "a-grande-familia-dvd"
-      },
-      horarioInicio: "17:00", duracaoMinutos: 30 
-    },
-    { idArchive: "power-rangers-br", nomePrograma: "Power Rangers", horarioInicio: "17:30", duracaoMinutos: 30 },
-    { 
-      nomePrograma: {
-        seg: "Power Rangers: Resgate na Velocidade da Luz", ter: "Power Rangers Dino Trovão", qua: "Power Rangers: Resgate na Velocidade da Luz", qui: "Power Rangers Dino Trovão", sex: "Power Rangers: Resgate na Velocidade da Luz", sab: "Power Rangers Dino Trovão", dom: "Power Rangers: Resgate na Velocidade da Luz"
-      },
-      idArchive: {
-        seg: "40_20250503_202505", ter: "power-rangers-dino-trovao-episodios", qua: "40_20250503_202505", qui: "power-rangers-dino-trovao-episodios", sex: "40_20250503_202505", sab: "power-rangers-dino-trovao-episodios", dom: "40_20250503_202505"
-      },
-      horarioInicio: "18:00", duracaoMinutos: 30 
-    },
-    { idArchive: "NarutoCNBR", nomePrograma: "Naruto Clássico", horarioInicio: "18:30", duracaoMinutos: 30 },
-
-    // === PRIME TIME (19:00 - 23:00) ===
-    { idArchive: "naruto-shippuuden-021-720p", nomePrograma: "Naruto Shippuden", horarioInicio: "19:00", duracaoMinutos: 30 },
-    { idArchive: "2000-yu-gi-oh-s-01", nomePrograma: "Yu-Gi-Oh!", horarioInicio: "19:30", duracaoMinutos: 30 },
-    { idArchive: "fullmetal-completo-pt-br", nomePrograma: "Fullmetal Alchemist", horarioInicio: "20:00", duracaoMinutos: 30 },
-    { 
-      nomePrograma: {
-        seg: "Yu Yu Hakusho", ter: "Hunter x Hunter (1999)", qua: "Yu Yu Hakusho", qui: "Hunter x Hunter (1999)", sex: "Yu Yu Hakusho", sab: "Hunter x Hunter (1999)", dom: "Yu Yu Hakusho"
-      },
-      idArchive: {
-        seg: "YuYuHakushoDublado", ter: "hunter-x-hunter-1999-pt-br-004", qua: "YuYuHakushoDublado", qui: "hunter-x-hunter-1999-pt-br-004", sex: "YuYuHakushoDublado", sab: "hunter-x-hunter-1999-pt-br-004", dom: "YuYuHakushoDublado"
-      },
-      horarioInicio: "20:30", duracaoMinutos: 30 
-    },    
-    { 
-      idArchive: ["PaixaoFlix-1-Temp", "PaixaoFlix-2-Temp", "PaixaoFlix-Kenan-e-Kel-3oTemp", "PaixaoFlix-Kenan-e-Kel-4oTemp"],
-      nomePrograma: "Kenan & Kel", 
-      horarioInicio: "21:00", 
-      duracaoMinutos: 30 
-    },    
-    { 
-      nomePrograma: {
-        seg: "Batman: Os Bravos e os Destemidos", ter: "Batman: Os Bravos e os Destemidos", qua: "Batman: Os Bravos e os Destemidos", qui: "Batman: Os Bravos e os Destemidos", sex: "Batman: Os Bravos e os Destemidos", sab: "Batman: A Série Animada", dom: "Batman: Os Bravos e os Destemidos"
-      },
-      idArchive: {
-        seg: "batman-os-bravos-e-destemidos-2008-2011", ter: "batman-os-bravos-e-destemidos-2008-2011", qua: "batman-os-bravos-e-destemidos-2008-2011", qui: "batman-os-bravos-e-destemidos-2008-2011", sex: "batman-os-bravos-e-destemidos-2008-2011", sab: "batman-a-serie-animada-dublada-pt-br", dom: "batman-os-bravos-e-destemidos-2008-2011"
-      },
-      horarioInicio: "21:30", duracaoMinutos: 30 
-    },
-    { idArchive: "fut01", nomePrograma: "Futurama", horarioInicio: "22:00", duracaoMinutos: 30 },
-    { 
-      nomePrograma: {
-        seg: "Batman do Futuro", ter: "Batman do Futuro", qua: "Batman do Futuro", qui: "Batman do Futuro", sex: "Invencível", sab: "Batman do Futuro", dom: "Batman do Futuro"
-      },
-      idArchive: {
-        seg: "desenhos-004-batman-do-futuro-batman-beyond-19992001", ter: "desenhos-004-batman-do-futuro-batman-beyond-19992001", qua: "desenhos-004-batman-do-futuro-batman-beyond-19992001", qui: "desenhos-004-batman-do-futuro-batman-beyond-19992001", sex: "invenciveldublado", sab: "desenhos-004-batman-do-futuro-batman-beyond-19992001", dom: "desenhos-004-batman-do-futuro-batman-beyond-19992001"
-      },
-      horarioInicio: "22:30", duracaoMinutos: 30 
+    {
+      nomeBloco: "Prime Time",
+      horarioInicio: "19:00",
+      duracaoMinutos: 240, // 19:00 às 23:00 (4h - 240 min)
+      atracoes: [
+        { nomePrograma: "Naruto Shippuden", idArchive: "naruto-shippuuden-021-720p" },
+        { nomePrograma: "Yu-Gi-Oh!", idArchive: "2000-yu-gi-oh-s-01" },
+        { nomePrograma: "Fullmetal Alchemist", idArchive: "fullmetal-completo-pt-br" },
+        { 
+          nomePrograma: {
+            seg: "Yu Yu Hakusho", ter: "Hunter x Hunter (1999)", qua: "Yu Yu Hakusho", qui: "Hunter x Hunter (1999)", sex: "Yu Yu Hakusho", sab: "Hunter x Hunter (1999)", dom: "Yu Yu Hakusho"
+          },
+          idArchive: {
+            seg: "YuYuHakushoDublado", ter: "hunter-x-hunter-1999-pt-br-004", qua: "YuYuHakushoDublado", qui: "hunter-x-hunter-1999-pt-br-004", sex: "YuYuHakushoDublado", sab: "hunter-x-hunter-1999-pt-br-004", dom: "YuYuHakushoDublado"
+          }
+        },
+        { 
+          nomePrograma: "Kenan & Kel",
+          idArchive: ["PaixaoFlix-1-Temp", "PaixaoFlix-2-Temp", "PaixaoFlix-Kenan-e-Kel-3oTemp", "PaixaoFlix-Kenan-e-Kel-4oTemp"]
+        },
+        { 
+          nomePrograma: {
+            seg: "Batman: Os Bravos e os Destemidos", ter: "Batman: Os Bravos e os Destemidos", qua: "Batman: Os Bravos e os Destemidos", qui: "Batman: Os Bravos e os Destemidos", sex: "Batman: Os Bravos e os Destemidos", sab: "Batman: A Série Animada", dom: "Batman: Os Bravos e os Destemidos"
+          },
+          idArchive: {
+            seg: "batman-os-bravos-e-destemidos-2008-2011", ter: "batman-os-bravos-e-destemidos-2008-2011", qua: "batman-os-bravos-e-destemidos-2008-2011", qui: "batman-os-bravos-e-destemidos-2008-2011", sex: "batman-os-bravos-e-destemidos-2008-2011", sab: "batman-a-serie-animada-dublada-pt-br", dom: "batman-os-bravos-e-destemidos-2008-2011"
+          }
+        },
+        { nomePrograma: "Futurama", idArchive: "fut01" },
+        { 
+          nomePrograma: {
+            seg: "Batman do Futuro", ter: "Batman do Futuro", qua: "Batman do Futuro", qui: "Batman do Futuro", sex: "Invencível", sab: "Batman do Futuro", dom: "Batman do Futuro"
+          },
+          idArchive: {
+            seg: "desenhos-004-batman-do-futuro-batman-beyond-19992001", ter: "desenhos-004-batman-do-futuro-batman-beyond-19992001", qua: "desenhos-004-batman-do-futuro-batman-beyond-19992001", qui: "desenhos-004-batman-do-futuro-batman-beyond-19992001", sex: "invenciveldublado", sab: "desenhos-004-batman-do-futuro-batman-beyond-19992001", dom: "desenhos-004-batman-do-futuro-batman-beyond-19992001"
+          }
+        }
+      ]
     }
   ];
 
@@ -386,6 +387,12 @@
   function horaParaMinutos(horarioStr) {
     const [h, m] = horarioStr.split(':').map(Number);
     return h * 60 + m;
+  }
+
+  function formatarSegundosParaHHMM(segundos) {
+    const h = Math.floor(segundos / 3600) % 24;
+    const m = Math.floor((segundos % 3600) / 60);
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
   }
 
   function limparTimerReconexao() {
@@ -466,48 +473,88 @@
     const diaDaSemana = DIAS_SEMANA[hoje.getDay()];
     const diaDoAno = Math.floor((hoje - new Date(hoje.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
 
-    const promessasProgs = programacaoConfig.map(async (prog) => {
-      const nomeAlvo = (typeof prog.nomePrograma === 'object' && prog.nomePrograma !== null)
-        ? prog.nomePrograma[diaDaSemana]
-        : prog.nomePrograma;
+    for (const blocoConfig of programacaoConfig) {
+      const mInicio = horaParaMinutos(blocoConfig.horarioInicio);
+      const mFim = mInicio + blocoConfig.duracaoMinutos;
 
-      const idAlvo = (typeof prog.idArchive === 'object' && prog.idArchive !== null && !Array.isArray(prog.idArchive))
-        ? prog.idArchive[diaDaSemana]
-        : prog.idArchive;
+      const blockStartSec = mInicio * 60;
+      const blockEndSec = mFim * 60;
 
-      if (!idAlvo || !nomeAlvo) return null;
+      const atracoesCarregadas = [];
 
-      const mInicio = horaParaMinutos(prog.horarioInicio);
-      const mFim = mInicio + prog.duracaoMinutos;
+      for (const atr of blocoConfig.atracoes) {
+        const nomeAlvo = (typeof atr.nomePrograma === 'object' && atr.nomePrograma !== null)
+          ? (atr.nomePrograma[diaDaSemana] || Object.values(atr.nomePrograma)[0])
+          : atr.nomePrograma;
 
-      const episodios = await carregarVideosArchive(idAlvo);
-      
-      let epIndexInicial = 0;
-      let urlEp = URL_VIDEO_INTERVALO;
-      if (episodios.length > 0) {
-        epIndexInicial = diaDoAno % episodios.length;
-        urlEp = episodios[epIndexInicial].url;
+        const idAlvo = (typeof atr.idArchive === 'object' && atr.idArchive !== null && !Array.isArray(atr.idArchive))
+          ? (atr.idArchive[diaDaSemana] || Object.values(atr.idArchive)[0])
+          : atr.idArchive;
+
+        if (!idAlvo || !nomeAlvo) continue;
+
+        const episodios = await carregarVideosArchive(idAlvo);
+        if (episodios.length > 0) {
+          const epIndexInicial = diaDoAno % episodios.length;
+          atracoesCarregadas.push({
+            nomePrograma: nomeAlvo,
+            episodios: episodios,
+            epIndexInicial: epIndexInicial
+          });
+        }
       }
 
-      return {
-        h: prog.horarioInicio,
-        m: mInicio,
-        mFim: mFim,
-        n: nomeAlvo,
-        u: urlEp,
-        listaEpisodios: episodios,
-        epIndexAtual: epIndexInicial
-      };
-    });
+      if (atracoesCarregadas.length === 0) continue;
 
-    const resultadosGerais = await Promise.all(promessasProgs);
-    
-    gradeAutomated = resultadosGerais.filter(item => item !== null).sort((a, b) => a.m - b.m);
+      let currentSec = blockStartSec;
+      let attrPointers = atracoesCarregadas.map(a => a.epIndexInicial);
+
+      while (currentSec < blockEndSec) {
+        let adicionouNaRodada = false;
+
+        for (let i = 0; i < atracoesCarregadas.length; i++) {
+          if (currentSec >= blockEndSec) break;
+
+          const attr = atracoesCarregadas[i];
+          const epIdx = attrPointers[i];
+          const ep = attr.episodios[epIdx];
+          const dur = (ep.duracao && ep.duracao > 0) ? ep.duracao : 1380;
+
+          if (currentSec + dur > blockEndSec + 300) {
+            continue;
+          }
+
+          gradeAutomated.push({
+            nomeBloco: blocoConfig.nomeBloco,
+            nomePrograma: attr.nomePrograma,
+            tituloEpisodio: ep.titulo,
+            u: ep.url,
+            duracao: dur,
+            inicioAbsolutoSec: currentSec,
+            fimAbsolutoSec: currentSec + dur,
+            h: formatarSegundosParaHHMM(currentSec)
+          });
+
+          currentSec += dur;
+          attrPointers[i] = (epIdx + 1) % attr.episodios.length;
+          adicionouNaRodada = true;
+        }
+
+        if (!adicionouNaRodada) break;
+      }
+    }
+
+    gradeAutomated.sort((a, b) => a.inicioAbsolutoSec - b.inicioAbsolutoSec);
 
     gradeAutomated.forEach((item, idx) => {
-      item.proximo = gradeAutomated[idx + 1] ? `${gradeAutomated[idx + 1].h} - ${gradeAutomated[idx + 1].n}` : "23:00 - Transmissão Encerrada";
+      if (gradeAutomated[idx + 1]) {
+        const prox = gradeAutomated[idx + 1];
+        item.proximo = `${prox.h} - ${prox.nomePrograma} (${prox.nomeBloco})`;
+      } else {
+        item.proximo = "23:00 - Transmissão Encerrada";
+      }
     });
-    
+
     const player = document.getElementById('player');
     if (player) {
       player.onended = function() {
@@ -523,7 +570,7 @@
   function encerrarSinalMadrugada() {
     limparTimerReconexao();
     document.getElementById('current').innerText = "😴 Transmissão Encerrada (Voltamos às 07:00)";
-    document.getElementById('next').innerText = "📺 07:00 - Coragem, o Cão Covarde";
+    document.getElementById('next').innerText = "📺 07:00 - Manhã Animada";
     const player = document.getElementById('player');
     if (player) {
       player.loop = false;
@@ -535,16 +582,16 @@
 
   function iniciarTransmissaoInicial() {
     const agora = new Date();
-    const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
+    const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
 
-    if (minutosHoje >= horaParaMinutos("23:00") || minutosHoje < horaParaMinutos("07:00")) {
+    if (segundosHoje >= horaParaMinutos("23:00") * 60 || segundosHoje < horaParaMinutos("07:00") * 60) {
       encerrarSinalMadrugada();
       return;
     }
 
     indiceAtual = -1;
     for (let i = 0; i < gradeAutomated.length; i++) {
-      if (minutosHoje >= gradeAutomated[i].m && minutosHoje < gradeAutomated[i].mFim) {
+      if (segundosHoje >= gradeAutomated[i].inicioAbsolutoSec && segundosHoje < gradeAutomated[i].fimAbsolutoSec) {
         indiceAtual = i;
         break;
       }
@@ -553,7 +600,7 @@
     if (indiceAtual !== -1) {
       executarMidia(indiceAtual, true);
     } else {
-      const proximoPrograma = gradeAutomated.find(p => p.m > minutosHoje);
+      const proximoPrograma = gradeAutomated.find(p => p.inicioAbsolutoSec > segundosHoje);
       if (proximoPrograma) {
         exibirTelaIntervalo(proximoPrograma);
       } else {
@@ -565,50 +612,32 @@
   function tocarProximoEpisodioSemCorte() {
     const agora = new Date();
     const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
-    const programaAtual = gradeAutomated[indiceAtual];
-    const proximoPrograma = gradeAutomated[indiceAtual + 1];
 
-    if (!programaAtual) return;
+    const proximoIndice = indiceAtual + 1;
+    const proximoPrograma = gradeAutomated[proximoIndice];
 
-    const FINS_DE_TURNO = ["11:30", "13:30", "19:00", "23:00"];
-
-    const horaFimPrograma = `${String(Math.floor(programaAtual.mFim / 60)).padStart(2, '0')}:${String(programaAtual.mFim % 60).padStart(2, '0')}`;
-    const ehFimDeTurno = FINS_DE_TURNO.includes(horaFimPrograma);
-
-    if (proximoPrograma) {
-      if (segundosHoje < (proximoPrograma.m * 60)) {
-
-        if (!ehFimDeTurno) {
-          indiceAtual++;
-          console.log(`▶️ Transição contínua no mesmo bloco: iniciando "${proximoPrograma.n}"`);
-          executarMidia(indiceAtual, false);
-          return;
-        } else {
-          console.log(`🛑 Fim de bloco (${horaFimPrograma}). Exibindo intervalo até ${proximoPrograma.h}...`);
-          exibirTelaIntervalo(proximoPrograma);
-          return;
-        }
-
+    if (proximoPrograma && segundosHoje < (horaParaMinutos("23:00") * 60)) {
+      if (segundosHoje < proximoPrograma.inicioAbsolutoSec) {
+        exibirTelaIntervalo(proximoPrograma);
       } else {
-        indiceAtual++;
+        indiceAtual = proximoIndice;
         executarMidia(indiceAtual, false);
-        return;
       }
+    } else {
+      encerrarSinalMadrugada();
     }
-
-    encerrarSinalMadrugada();
   }
 
   function exibirTelaIntervalo(proximoPrograma) {
     if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
     document.getElementById('current').innerText = "⏸️ Intervalo Comercial";
-    document.getElementById('next').innerText = `${proximoPrograma.h} - ${proximoPrograma.n}`;
+    document.getElementById('next').innerText = `${proximoPrograma.h} - ${proximoPrograma.nomePrograma} (${proximoPrograma.nomeBloco})`;
     
     const player = document.getElementById('player');
     delete player.dataset.tentouProxy;
     
     player.onerror = function() {
-      console.error("Erro ao carregar vídeo de intervalo local. Aguardando a hora do próximo programa...");
+      console.error("Erro ao carregar vídeo de intervalo local.");
       player.onerror = null;
     };
 
@@ -625,9 +654,9 @@
 
     const checarIntervalo = setInterval(() => {
       const agora = new Date();
-      const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
+      const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
 
-      if (minutosHoje >= proximoPrograma.m) {
+      if (segundosHoje >= proximoPrograma.inicioAbsolutoSec) {
         clearInterval(checarIntervalo);
         limparTimerReconexao();
         player.loop = false;
@@ -642,14 +671,14 @@
 
     timerReconexao = setInterval(() => {
       const agora = new Date();
-      const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
+      const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
 
-      if (minutosHoje >= programa.mFim) {
+      if (segundosHoje >= programa.fimAbsolutoSec) {
         limparTimerReconexao();
         return;
       }
 
-      console.log(`🔄 [Reconexão Auto] Testando sinal do programa "${programa.n}" em segundo plano...`);
+      console.log(`🔄 [Reconexão Auto] Testando sinal do programa "${programa.nomePrograma}" em segundo plano...`);
 
       const testVideo = document.createElement('video');
       testVideo.preload = 'metadata';
@@ -657,7 +686,7 @@
       let tentouProxyTeste = false;
 
       testVideo.oncanplay = function() {
-        console.log(`✅ [Reconexão Auto] Sinal de "${programa.n}" recuperado! Retornando à transmissão normal...`);
+        console.log(`✅ [Reconexão Auto] Sinal de "${programa.nomePrograma}" recuperado! Retornando à transmissão normal...`);
         limparTimerReconexao();
         testVideo.removeAttribute('src');
         testVideo.load();
@@ -669,7 +698,7 @@
           tentouProxyTeste = true;
           testVideo.src = `https://corsproxy.io/?${encodeURIComponent(programa.u)}`;
         } else {
-          console.warn(`⏳ [Reconexão Auto] Servidor indisponível para "${programa.n}". Nova tentativa em 20 segundos...`);
+          console.warn(`⏳ [Reconexão Auto] Servidor indisponível para "${programa.nomePrograma}". Nova tentativa em 20s...`);
           testVideo.removeAttribute('src');
           testVideo.load();
         }
@@ -679,53 +708,39 @@
     }, 20000);
   }
 
-  function tratarErroOuDemora(programa) {
-    if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
-    const index = gradeAutomated.indexOf(programa);
-    const proximoPrograma = gradeAutomated[index + 1];
-    
-    const FINS_DE_TURNO = ["11:30", "13:30", "19:00", "23:00"];
-    const horaFimPrograma = `${String(Math.floor(programa.mFim / 60)).padStart(2, '0')}:${String(programa.mFim % 60).padStart(2, '0')}`;
-    const ehFimDeTurno = FINS_DE_TURNO.includes(horaFimPrograma);
-
-    if (proximoPrograma) {
-      if (!ehFimDeTurno) {
-        console.warn(`⚠️ Falha ao carregar "${programa.n}". Como não é fim de bloco, avançando direto para "${proximoPrograma.n}"...`);
-        indiceAtual = index + 1;
-        executarMidia(indiceAtual, false);
-      } else {
-        exibirTelaIntervalo(proximoPrograma);
-        tentarReconectarProgramaEmSegundoPlano(programa, index);
-      }
-    } else {
-      encerrarSinalMadrugada();
-    }
-  }
-
   function executarMidia(index, sincronizarSegundos) {
     limparTimerReconexao();
     const programa = gradeAutomated[index];
     if (!programa) return;
-
-    if (programa.listaEpisodios && programa.listaEpisodios.length > 0) {
-      programa.u = programa.listaEpisodios[programa.epIndexAtual].url;
-    }
 
     const player = document.getElementById('player');
     player.loop = false;
     player.removeAttribute('crossorigin');
     delete player.dataset.tentouProxy;
 
-    document.getElementById('current').innerText = programa.n;
+    document.getElementById('current').innerText = `${programa.nomeBloco} ➔ ${programa.nomePrograma}`;
     document.getElementById('next').innerText = programa.proximo;
 
     if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
 
-    player.onerror = function() {
-      if (player.src && player.src.includes(URL_VIDEO_INTERVALO)) return;
+    player.onerror = function(e) {
+      if (player.error) {
+        const codigosErro = {
+          1: "DOWNLOAD_ABORTADO",
+          2: "ERRO_DE_REDE",
+          3: "ERRO_DE_DECODIFICACAO",
+          4: "FORMATO_NAO_SUPORTADO"
+        };
+        console.error(`❌ Falha no programa (${programa.nomePrograma}):`, codigosErro[player.error.code] || player.error.code);
+      }
+
+      if (player.src && player.src.includes(URL_VIDEO_INTERVALO)) {
+        return;
+      }
 
       if (!player.dataset.tentouProxy) {
         player.dataset.tentouProxy = "true";
+        console.warn(`⚠️ Falha ao carregar link direto de "${programa.nomePrograma}". Tentando via Proxy...`);
         player.src = `https://corsproxy.io/?${encodeURIComponent(programa.u)}`;
         return;
       }
@@ -736,6 +751,7 @@
 
     timeoutCarregamento = setTimeout(() => {
       if (player.readyState === 0) {
+        console.warn(`⏳ Servidor do Archive excedeu 60s sem responder: ${programa.nomePrograma}. Alternando para intervalo...`);
         tratarErroOuDemora(programa);
       }
     }, 60000);
@@ -750,35 +766,41 @@
 
     if (sincronizarSegundos) {
       const agora = new Date();
-      const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
-      const segundosHoje = agora.getSeconds();
-      const minutosDecorridos = minutosHoje - programa.m;
-      const segundosDecorridos = (minutosDecorridos * 60) + segundosHoje;
+      const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
+      const segundosDecorridos = segundosHoje - programa.inicioAbsolutoSec;
 
       player.addEventListener('loadedmetadata', function() {
         if (segundosDecorridos >= player.duration) {
-          const FINS_DE_TURNO = ["11:30", "13:30", "19:00", "23:00"];
-          const horaFimPrograma = `${String(Math.floor(programa.mFim / 60)).padStart(2, '0')}:${String(programa.mFim % 60).padStart(2, '0')}`;
-          
-          if (!FINS_DE_TURNO.includes(horaFimPrograma) && gradeAutomated[index + 1]) {
-            indiceAtual = index + 1;
-            executarMidia(indiceAtual, true);
-          } else if (gradeAutomated[index + 1]) {
-            exibirTelaIntervalo(gradeAutomated[index + 1]);
+          const proximoPrograma = gradeAutomated[index + 1];
+          if (proximoPrograma) {
+            exibirTelaIntervalo(proximoPrograma);
           } else {
             encerrarSinalMadrugada();
           }
         } else if (segundosDecorridos > 0) {
           player.currentTime = segundosDecorridos;
           if (tvLigada) {
-            player.play().catch(err => console.log("Aguardando interação...", err));
+            player.play().then(() => { player.muted = false; }).catch(err => console.log("Aguardando interação do usuário...", err));
           }
         }
       }, { once: true });
     } else {
       if (tvLigada) {
-        player.play().catch(err => console.log("Aguardando interação...", err));
+        player.play().then(() => { player.muted = false; }).catch(err => console.log("Aguardando interação...", err));
       }
+    }
+  }
+
+  function tratarErroOuDemora(programa) {
+    if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+    const index = gradeAutomated.indexOf(programa);
+    const proximoPrograma = gradeAutomated[index + 1];
+    
+    if (proximoPrograma) {
+      exibirTelaIntervalo(proximoPrograma);
+      tentarReconectarProgramaEmSegundoPlano(programa, index);
+    } else {
+      encerrarSinalMadrugada();
     }
   }
 
