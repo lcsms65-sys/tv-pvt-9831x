@@ -562,7 +562,6 @@
     }
   }
 
-  // FUNÇÃO ATUALIZADA: Transição contínua dentro dos blocos e intervalo apenas na troca de turno
   function tocarProximoEpisodioSemCorte() {
     const agora = new Date();
     const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
@@ -571,24 +570,20 @@
 
     if (!programaAtual) return;
 
-    // Horários oficiais em que cada um dos 4 blocos encerra
     const FINS_DE_TURNO = ["11:30", "13:30", "19:00", "23:00"];
 
-    // Converte o tempo de término do programa atual para formato HH:MM
     const horaFimPrograma = `${String(Math.floor(programaAtual.mFim / 60)).padStart(2, '0')}:${String(programaAtual.mFim % 60).padStart(2, '0')}`;
     const ehFimDeTurno = FINS_DE_TURNO.includes(horaFimPrograma);
 
     if (proximoPrograma) {
       if (segundosHoje < (proximoPrograma.m * 60)) {
 
-        // Se NÃO for final de bloco, engata o próximo programa sem intervalo
         if (!ehFimDeTurno) {
           indiceAtual++;
           console.log(`▶️ Transição contínua no mesmo bloco: iniciando "${proximoPrograma.n}"`);
           executarMidia(indiceAtual, false);
           return;
         } else {
-          // Se for o fim de um dos 4 blocos, exibe Intervalo.mp4 até dar a hora do próximo
           console.log(`🛑 Fim de bloco (${horaFimPrograma}). Exibindo intervalo até ${proximoPrograma.h}...`);
           exibirTelaIntervalo(proximoPrograma);
           return;
@@ -684,6 +679,29 @@
     }, 20000);
   }
 
+  function tratarErroOuDemora(programa) {
+    if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+    const index = gradeAutomated.indexOf(programa);
+    const proximoPrograma = gradeAutomated[index + 1];
+    
+    const FINS_DE_TURNO = ["11:30", "13:30", "19:00", "23:00"];
+    const horaFimPrograma = `${String(Math.floor(programa.mFim / 60)).padStart(2, '0')}:${String(programa.mFim % 60).padStart(2, '0')}`;
+    const ehFimDeTurno = FINS_DE_TURNO.includes(horaFimPrograma);
+
+    if (proximoPrograma) {
+      if (!ehFimDeTurno) {
+        console.warn(`⚠️ Falha ao carregar "${programa.n}". Como não é fim de bloco, avançando direto para "${proximoPrograma.n}"...`);
+        indiceAtual = index + 1;
+        executarMidia(indiceAtual, false);
+      } else {
+        exibirTelaIntervalo(proximoPrograma);
+        tentarReconectarProgramaEmSegundoPlano(programa, index);
+      }
+    } else {
+      encerrarSinalMadrugada();
+    }
+  }
+
   function executarMidia(index, sincronizarSegundos) {
     limparTimerReconexao();
     const programa = gradeAutomated[index];
@@ -703,24 +721,11 @@
 
     if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
 
-    player.onerror = function(e) {
-      if (player.error) {
-        const codigosErro = {
-          1: "DOWNLOAD_ABORTADO (A reprodução foi cancelada)",
-          2: "ERRO_DE_REDE (Servidor do Archive demorou ou cortou a conexão)",
-          3: "ERRO_DE_DECODIFICACAO (Arquivo ou codec corrompido)",
-          4: "FORMATO_NAO_SUPORTADO (Browser não suporta o codec deste arquivo)"
-        };
-        console.error(`❌ Falha no programa (${programa.n}):`, codigosErro[player.error.code] || player.error.code);
-      }
-
-      if (player.src && player.src.includes(URL_VIDEO_INTERVALO)) {
-        return;
-      }
+    player.onerror = function() {
+      if (player.src && player.src.includes(URL_VIDEO_INTERVALO)) return;
 
       if (!player.dataset.tentouProxy) {
         player.dataset.tentouProxy = "true";
-        console.warn(`⚠️ Falha ao carregar link direto de "${programa.n}". Tentando via Proxy...`);
         player.src = `https://corsproxy.io/?${encodeURIComponent(programa.u)}`;
         return;
       }
@@ -731,7 +736,6 @@
 
     timeoutCarregamento = setTimeout(() => {
       if (player.readyState === 0) {
-        console.warn(`⏳ Servidor do Archive excedeu o limite de 60s sem responder para: ${programa.n}. Alternando para intervalo...`);
         tratarErroOuDemora(programa);
       }
     }, 60000);
@@ -741,7 +745,6 @@
     };
 
     player.src = programa.u;
-    
     player.muted = false;
     player.volume = 1.0;
 
@@ -754,36 +757,28 @@
 
       player.addEventListener('loadedmetadata', function() {
         if (segundosDecorridos >= player.duration) {
-          const proximoPrograma = gradeAutomated[index + 1];
-          if (proximoPrograma) {
-            exibirTelaIntervalo(proximoPrograma);
+          const FINS_DE_TURNO = ["11:30", "13:30", "19:00", "23:00"];
+          const horaFimPrograma = `${String(Math.floor(programa.mFim / 60)).padStart(2, '0')}:${String(programa.mFim % 60).padStart(2, '0')}`;
+          
+          if (!FINS_DE_TURNO.includes(horaFimPrograma) && gradeAutomated[index + 1]) {
+            indiceAtual = index + 1;
+            executarMidia(indiceAtual, true);
+          } else if (gradeAutomated[index + 1]) {
+            exibirTelaIntervalo(gradeAutomated[index + 1]);
           } else {
             encerrarSinalMadrugada();
           }
         } else if (segundosDecorridos > 0) {
           player.currentTime = segundosDecorridos;
           if (tvLigada) {
-            player.play().then(() => { player.muted = false; }).catch(err => console.log("Aguardando interação do usuário...", err));
+            player.play().catch(err => console.log("Aguardando interação...", err));
           }
         }
       }, { once: true });
     } else {
       if (tvLigada) {
-        player.play().then(() => { player.muted = false; }).catch(err => console.log("Aguardando interação...", err));
+        player.play().catch(err => console.log("Aguardando interação...", err));
       }
-    }
-  }
-
-  function tratarErroOuDemora(programa) {
-    if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
-    const index = gradeAutomated.indexOf(programa);
-    const proximoPrograma = gradeAutomated[index + 1];
-    
-    if (proximoPrograma) {
-      exibirTelaIntervalo(proximoPrograma);
-      tentarReconectarProgramaEmSegundoPlano(programa, index);
-    } else {
-      encerrarSinalMadrugada();
     }
   }
 
