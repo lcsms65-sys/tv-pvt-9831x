@@ -196,7 +196,7 @@
   const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
 
   const programacaoConfig = [
-    // === TURNO DA MANHÃ (07:00 - 12:00) ===
+    // === TURNO DA MANHÃ (07:00 - 11:30) ===
     { idArchive: "coragemcaocovarde-backup", nomePrograma: "Coragem, o Cão Covarde", horarioInicio: "07:00", duracaoMinutos: 30 },
     { idArchive: "as-aventuras-de-jackie-chan-Completo-paixaoflix", nomePrograma: "As Aventuras de Jackie Chan", horarioInicio: "07:30", duracaoMinutos: 30 },
     { idArchive: "caverna-do-dragao-1983-480p", nomePrograma: "Caverna do Dragão", horarioInicio: "08:00", duracaoMinutos: 30 },
@@ -255,9 +255,9 @@
       },
       horarioInicio: "11:00", duracaoMinutos: 30 
     },
-    { idArchive: "e.-p.-c-s-01-e-09-terminando-e-quebrando-720p", nomePrograma: "Eu, A Patroa e as Crianças", horarioInicio: "11:30", duracaoMinutos: 30 },
 
-    // === TURNO DA TARDE (12:00 - 16:30) ===
+    // === HORA DO ALMOÇO (11:30 - 13:30) ===
+    { idArchive: "e.-p.-c-s-01-e-09-terminando-e-quebrando-720p", nomePrograma: "Eu, A Patroa e as Crianças", horarioInicio: "11:30", duracaoMinutos: 30 },
     { idArchive: "um-maluco-no-pedaco-6x-18", nomePrograma: "Um Maluco no Pedaço", horarioInicio: "12:00", duracaoMinutos: 30 },
     { 
       idArchive: [
@@ -269,6 +269,8 @@
       nomePrograma: "Todo Mundo Odeia o Chris", horarioInicio: "12:30", duracaoMinutos: 30 
     },
     { idArchive: "duck-tales-dublado", nomePrograma: "DuckTales: Os Caçadores de Aventuras", horarioInicio: "13:00", duracaoMinutos: 30 },
+
+    // === ANIMES E CLÁSSICOS DA TARDE (13:30 - 19:00) ===
     { 
       nomePrograma: {
         seg: "Clássicos Disney", ter: "Clássicos Disney", qua: "Clássicos Disney", qui: "Clássicos Disney", sex: "Mickey e Donald", sab: "Mickey e Donald", dom: "Clássicos Disney"
@@ -288,8 +290,6 @@
     { idArchive: "DBZCN", nomePrograma: "Dragon Ball Z", horarioInicio: "15:00", duracaoMinutos: 30 },
     { idArchive: "DragonBallGTCNBR", nomePrograma: "Dragon Ball GT", horarioInicio: "15:30", duracaoMinutos: 30 },
     { idArchive: "DBZKaiCNBR", nomePrograma: "Dragon Ball Z Kai", horarioInicio: "16:00", duracaoMinutos: 30 },
-
-    // === TURNO FINAL DA TARDE (16:30 - 19:00) ===
     { 
       nomePrograma: { sab: "Sai de Baixo" },
       idArchive: { sab: ["sai-de-baixo", "sdb-4temp"] },
@@ -326,7 +326,7 @@
     },
     { idArchive: "NarutoCNBR", nomePrograma: "Naruto Clássico", horarioInicio: "18:30", duracaoMinutos: 30 },
 
-    // === TURNO DA NOITE (19:00 - 23:00) ===
+    // === PRIME TIME (19:00 - 23:00) ===
     { idArchive: "naruto-shippuuden-021-720p", nomePrograma: "Naruto Shippuden", horarioInicio: "19:00", duracaoMinutos: 30 },
     { idArchive: "2000-yu-gi-oh-s-01", nomePrograma: "Yu-Gi-Oh!", horarioInicio: "19:30", duracaoMinutos: 30 },
     { idArchive: "fullmetal-completo-pt-br", nomePrograma: "Fullmetal Alchemist", horarioInicio: "20:00", duracaoMinutos: 30 },
@@ -355,7 +355,6 @@
       horarioInicio: "21:30", duracaoMinutos: 30 
     },
     { idArchive: "fut01", nomePrograma: "Futurama", horarioInicio: "22:00", duracaoMinutos: 30 },
-
     { 
       nomePrograma: {
         seg: "Batman do Futuro", ter: "Batman do Futuro", qua: "Batman do Futuro", qui: "Batman do Futuro", sex: "Invencível", sab: "Batman do Futuro", dom: "Batman do Futuro"
@@ -425,13 +424,11 @@
             
             let eps = arquivos
               .filter(f => {
-                // Filtro exclusivo para Yu Yu Hakusho: remove vídeos com mais de 45 minutos (2700s)
                 if (id === "YuYuHakushoDublado") {
                   const dur = converterParaSegundos(f.length);
                   if (dur > 2700) return false;
                 }
 
-                // Filtro exclusivo para A Grande Família: remove vídeos menores que 25 minutos (1500s) - extras do DVD
                 if (id === "a-grande-familia-dvd") {
                   const dur = converterParaSegundos(f.length);
                   if (dur < 1500) return false;
@@ -441,7 +438,6 @@
               })
               .sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
 
-            // Filtro exclusivo para Naruto Shippuden: limita a no máximo 79 episódios
             if (id === "naruto-shippuuden-021-720p") {
               eps = eps.slice(0, 79);
             }
@@ -566,76 +562,46 @@
     }
   }
 
-  // FUNÇÃO ATUALIZADA: Seleção Inteligente de Duração
+  // FUNÇÃO ATUALIZADA: Transição contínua dentro dos blocos e intervalo apenas na troca de turno
   function tocarProximoEpisodioSemCorte() {
     const agora = new Date();
     const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
     const programaAtual = gradeAutomated[indiceAtual];
+    const proximoPrograma = gradeAutomated[indiceAtual + 1];
 
-    if (programaAtual && segundosHoje < (programaAtual.mFim * 60)) {
-      const segundosRestantesNoBloco = (programaAtual.mFim * 60) - segundosHoje;
+    if (!programaAtual) return;
 
-      if (programaAtual.listaEpisodios && programaAtual.listaEpisodios.length > 1) {
-        
-        let epEncontradoIndex = -1;
+    // Horários oficiais em que cada um dos 4 blocos encerra
+    const FINS_DE_TURNO = ["11:30", "13:30", "19:00", "23:00"];
 
-        // 1º PASSO: Verifica se o próximo episódio da sequência normal cabe no tempo restante
-        const proximoIndexPadrao = (programaAtual.epIndexAtual + 1) % programaAtual.listaEpisodios.length;
-        const proximoEpPadrao = programaAtual.listaEpisodios[proximoIndexPadrao];
-        const duracaoPadrao = proximoEpPadrao.duracao > 0 ? proximoEpPadrao.duracao : 420;
+    // Converte o tempo de término do programa atual para formato HH:MM
+    const horaFimPrograma = `${String(Math.floor(programaAtual.mFim / 60)).padStart(2, '0')}:${String(programaAtual.mFim % 60).padStart(2, '0')}`;
+    const ehFimDeTurno = FINS_DE_TURNO.includes(horaFimPrograma);
 
-        if (duracaoPadrao <= segundosRestantesNoBloco) {
-          epEncontradoIndex = proximoIndexPadrao;
-        } else {
-          // 2º PASSO (Seleção Inteligente): O próximo da fila excede o tempo restante.
-          // Busca em toda a lista de episódios do programa um que caiba exatamente no tempo que sobra.
-          console.log(`⚠️ O próximo episódio (${Math.round(duracaoPadrao/60)} min) excede os ${Math.round(segundosRestantesNoBloco/60)} min restantes. Procurando um menor...`);
-          
-          for (let i = 0; i < programaAtual.listaEpisodios.length; i++) {
-            const testEp = programaAtual.listaEpisodios[i];
-            const duracaoTest = testEp.duracao > 0 ? testEp.duracao : 420;
+    if (proximoPrograma) {
+      if (segundosHoje < (proximoPrograma.m * 60)) {
 
-            if (duracaoTest <= segundosRestantesNoBloco) {
-              epEncontradoIndex = i;
-              break;
-            }
-          }
-        }
-
-        // Se um episódio compatível foi encontrado
-        if (epEncontradoIndex !== -1) {
-          programaAtual.epIndexAtual = epEncontradoIndex;
-          programaAtual.u = programaAtual.listaEpisodios[epEncontradoIndex].url;
-          console.log(`✅ Tocando episódio index [${epEncontradoIndex}] que cabe nos ${Math.round(segundosRestantesNoBloco/60)} min restantes.`);
-          
+        // Se NÃO for final de bloco, engata o próximo programa sem intervalo
+        if (!ehFimDeTurno) {
+          indiceAtual++;
+          console.log(`▶️ Transição contínua no mesmo bloco: iniciando "${proximoPrograma.n}"`);
           executarMidia(indiceAtual, false);
           return;
         } else {
-          // Nenhum episódio cabe no tempo restante -> Ativa a tela de intervalo
-          console.log(`🛑 Nenhum episódio cabe nos ${Math.round(segundosRestantesNoBloco/60)} min restantes. Indo para o intervalo...`);
-          const proximoPrograma = gradeAutomated[indiceAtual + 1];
-          if (proximoPrograma) {
-            exibirTelaIntervalo(proximoPrograma);
-            return;
-          }
+          // Se for o fim de um dos 4 blocos, exibe Intervalo.mp4 até dar a hora do próximo
+          console.log(`🛑 Fim de bloco (${horaFimPrograma}). Exibindo intervalo até ${proximoPrograma.h}...`);
+          exibirTelaIntervalo(proximoPrograma);
+          return;
         }
-      }
-    }
 
-    // Transição padrão de bloco ou encerramento
-    const proximoIndice = indiceAtual + 1;
-    const proximoPrograma = gradeAutomated[proximoIndice];
-
-    if (proximoPrograma && segundosHoje < (horaParaMinutos("23:00") * 60)) {
-      if (segundosHoje < (proximoPrograma.m * 60)) {
-        exibirTelaIntervalo(proximoPrograma);
       } else {
-        indiceAtual = proximoIndice;
+        indiceAtual++;
         executarMidia(indiceAtual, false);
+        return;
       }
-    } else {
-      encerrarSinalMadrugada();
     }
+
+    encerrarSinalMadrugada();
   }
 
   function exibirTelaIntervalo(proximoPrograma) {
