@@ -403,8 +403,10 @@
 
   async function carregarVideosArchive(idAlvo) {
     const colecoes = Array.isArray(idAlvo) ? idAlvo : [idAlvo];
+    const todosEpisodios = [];
     
-    const requisicoes = colecoes.map(async (id) => {
+    // Busca sequencial mantida internamente para estabilidade das coleções
+    for (const id of colecoes) {
       try {
         let urlAPI = `https://archive.org/metadata/${id}`;
         let resposta = await fetch(urlAPI);
@@ -448,22 +450,21 @@
               eps = eps.slice(0, 79);
             }
 
-            return eps.map(f => ({
+            const mapeados = eps.map(f => ({
               titulo: f.title || f.name.replace(/\.mp4$/i, ''),
               url: `https://archive.org/download/${id}/${encodeURIComponent(f.name)}`,
               duracao: converterParaSegundos(f.length)
             }));
+
+            todosEpisodios.push(...mapeados);
           }
         }
-        return [];
       } catch (erro) {
         console.error("Erro ao buscar metadados no Archive:", erro);
-        return [];
       }
-    });
+    }
 
-    const resultados = await Promise.all(requisicoes);
-    return resultados.flat();
+    return todosEpisodios;
   }
 
   async function inicializarGradeAutomatica() {
@@ -481,6 +482,7 @@
 
       const atracoesCarregadas = [];
 
+      // Carregamento estritamente sequencial das atrações
       for (const atr of blocoConfig.atracoes) {
         const nomeAlvo = (typeof atr.nomePrograma === 'object' && atr.nomePrograma !== null)
           ? (atr.nomePrograma[diaDaSemana] || Object.values(atr.nomePrograma)[0])
@@ -517,7 +519,9 @@
           const attr = atracoesCarregadas[i];
           const epIdx = attrPointers[i];
           const ep = attr.episodios[epIdx];
-          const dur = (ep.duracao && ep.duracao > 0) ? ep.duracao : 1380;
+
+          // Padronização de duração para evitar inconsistências nos metadados
+          const dur = (ep.duracao && ep.duracao > 300) ? ep.duracao : 1320;
 
           if (currentSec + dur > blockEndSec + 300) {
             continue;
@@ -548,7 +552,7 @@
     gradeAutomated.forEach((item, idx) => {
       if (gradeAutomated[idx + 1]) {
         const prox = gradeAutomated[idx + 1];
-        item.proximo = ` ${prox.nomePrograma} (${prox.nomeBloco})`;
+        item.proximo = `${prox.nomePrograma} (${prox.nomeBloco})`;
       } else {
         item.proximo = "23:00 - Transmissão Encerrada";
       }
@@ -692,7 +696,6 @@
       tratarErroOuDemora(programa);
     };
 
-    // Reduzido para 15s de espera limite para evitar tela preta longa em links com erro
     timeoutCarregamento = setTimeout(() => {
       if (player.readyState === 0) {
         console.warn(`⏳ Servidor excedeu tempo sem responder: ${programa.nomePrograma}. Pulando...`);
