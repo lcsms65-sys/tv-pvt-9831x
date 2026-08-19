@@ -166,7 +166,7 @@
     </div>
 
     <div class="painel-dev">
-      ⚠️ <b>Atenção:</b> Qualquer problema, informe ao administrador. | Alguns vídeos podem apresentar um idioma diferente. | Se um vídeo não iniciar por instabilidade no servidor, aguarde o início automático.
+      ⚠️ <b>Atenção:</b> Transmissão contínua em bloco. Caso um vídeo apresente erro, o sistema pulará automaticamente para a próxima atração.
     </div>
   </div>
 
@@ -195,12 +195,11 @@
 
   const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
 
-  // === GRADE DE PROGRAMAÇÃO REORGANIZADA NOS NOVOS 4 BLOCOS ===
   const programacaoConfig = [
     {
       nomeBloco: "Manhã Animada",
       horarioInicio: "07:00",
-      duracaoMinutos: 270, // 07:00 às 11:30 (4h30 - 270 min)
+      duracaoMinutos: 270,
       atracoes: [
         { nomePrograma: "Coragem, o Cão Covarde", idArchive: "coragemcaocovarde-backup" },
         { nomePrograma: "As Aventuras de Jackie Chan", idArchive: "as-aventuras-de-jackie-chan-Completo-paixaoflix" },
@@ -260,7 +259,7 @@
     {
       nomeBloco: "Hora do Almoço",
       horarioInicio: "11:30",
-      duracaoMinutos: 120, // 11:30 às 13:30 (2h - 120 min)
+      duracaoMinutos: 120,
       atracoes: [
         { nomePrograma: "Eu, A Patroa e as Crianças", idArchive: "e.-p.-c-s-01-e-09-terminando-e-quebrando-720p" },
         { nomePrograma: "Um Maluco no Pedaço", idArchive: "um-maluco-no-pedaco-6x-18" },
@@ -278,7 +277,7 @@
     {
       nomeBloco: "Animes e Clássicos da Tarde",
       horarioInicio: "13:30",
-      duracaoMinutos: 330, // 13:30 às 19:00 (5h30 - 330 min)
+      duracaoMinutos: 330,
       atracoes: [
         { nomePrograma: "DuckTales: Os Caçadores de Aventuras", idArchive: "duck-tales-dublado" },
         { 
@@ -329,7 +328,7 @@
     {
       nomeBloco: "Prime Time",
       horarioInicio: "19:00",
-      duracaoMinutos: 240, // 19:00 às 23:00 (4h - 240 min)
+      duracaoMinutos: 240,
       atracoes: [
         { nomePrograma: "Naruto Shippuden", idArchive: "naruto-shippuuden-021-720p" },
         { nomePrograma: "Yu-Gi-Oh!", idArchive: "2000-yu-gi-oh-s-01" },
@@ -617,12 +616,8 @@
     const proximoPrograma = gradeAutomated[proximoIndice];
 
     if (proximoPrograma && segundosHoje < (horaParaMinutos("23:00") * 60)) {
-      if (segundosHoje < proximoPrograma.inicioAbsolutoSec) {
-        exibirTelaIntervalo(proximoPrograma);
-      } else {
-        indiceAtual = proximoIndice;
-        executarMidia(indiceAtual, false);
-      }
+      indiceAtual = proximoIndice;
+      executarMidia(indiceAtual, false);
     } else {
       encerrarSinalMadrugada();
     }
@@ -666,48 +661,6 @@
     }, 3000);
   }
 
-  function tentarReconectarProgramaEmSegundoPlano(programa, index) {
-    limparTimerReconexao();
-
-    timerReconexao = setInterval(() => {
-      const agora = new Date();
-      const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
-
-      if (segundosHoje >= programa.fimAbsolutoSec) {
-        limparTimerReconexao();
-        return;
-      }
-
-      console.log(`🔄 [Reconexão Auto] Testando sinal do programa "${programa.nomePrograma}" em segundo plano...`);
-
-      const testVideo = document.createElement('video');
-      testVideo.preload = 'metadata';
-
-      let tentouProxyTeste = false;
-
-      testVideo.oncanplay = function() {
-        console.log(`✅ [Reconexão Auto] Sinal de "${programa.nomePrograma}" recuperado! Retornando à transmissão normal...`);
-        limparTimerReconexao();
-        testVideo.removeAttribute('src');
-        testVideo.load();
-        executarMidia(index, true);
-      };
-
-      testVideo.onerror = function() {
-        if (!tentouProxyTeste) {
-          tentouProxyTeste = true;
-          testVideo.src = `https://corsproxy.io/?${encodeURIComponent(programa.u)}`;
-        } else {
-          console.warn(`⏳ [Reconexão Auto] Servidor indisponível para "${programa.nomePrograma}". Nova tentativa em 20s...`);
-          testVideo.removeAttribute('src');
-          testVideo.load();
-        }
-      };
-
-      testVideo.src = programa.u;
-    }, 20000);
-  }
-
   function executarMidia(index, sincronizarSegundos) {
     limparTimerReconexao();
     const programa = gradeAutomated[index];
@@ -724,16 +677,6 @@
     if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
 
     player.onerror = function(e) {
-      if (player.error) {
-        const codigosErro = {
-          1: "DOWNLOAD_ABORTADO",
-          2: "ERRO_DE_REDE",
-          3: "ERRO_DE_DECODIFICACAO",
-          4: "FORMATO_NAO_SUPORTADO"
-        };
-        console.error(`❌ Falha no programa (${programa.nomePrograma}):`, codigosErro[player.error.code] || player.error.code);
-      }
-
       if (player.src && player.src.includes(URL_VIDEO_INTERVALO)) {
         return;
       }
@@ -749,12 +692,13 @@
       tratarErroOuDemora(programa);
     };
 
+    // Reduzido para 15s de espera limite para evitar tela preta longa em links com erro
     timeoutCarregamento = setTimeout(() => {
       if (player.readyState === 0) {
-        console.warn(`⏳ Servidor do Archive excedeu 60s sem responder: ${programa.nomePrograma}. Alternando para intervalo...`);
+        console.warn(`⏳ Servidor excedeu tempo sem responder: ${programa.nomePrograma}. Pulando...`);
         tratarErroOuDemora(programa);
       }
-    }, 60000);
+    }, 15000);
 
     player.oncanplay = function() {
       if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
@@ -773,7 +717,8 @@
         if (segundosDecorridos >= player.duration) {
           const proximoPrograma = gradeAutomated[index + 1];
           if (proximoPrograma) {
-            exibirTelaIntervalo(proximoPrograma);
+            indiceAtual = index + 1;
+            executarMidia(indiceAtual, false);
           } else {
             encerrarSinalMadrugada();
           }
@@ -793,12 +738,14 @@
 
   function tratarErroOuDemora(programa) {
     if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
-    const index = gradeAutomated.indexOf(programa);
-    const proximoPrograma = gradeAutomated[index + 1];
+    console.warn(`⚠️ O programa "${programa.nomePrograma}" falhou. Avançando imediatamente para a próxima atração...`);
     
-    if (proximoPrograma) {
-      exibirTelaIntervalo(proximoPrograma);
-      tentarReconectarProgramaEmSegundoPlano(programa, index);
+    const index = gradeAutomated.indexOf(programa);
+    const proximoIndice = index + 1;
+    
+    if (proximoIndice < gradeAutomated.length) {
+      indiceAtual = proximoIndice;
+      executarMidia(indiceAtual, false);
     } else {
       encerrarSinalMadrugada();
     }
