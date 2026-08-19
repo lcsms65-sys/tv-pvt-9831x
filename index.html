@@ -401,66 +401,71 @@
     }
   }
 
-  async function carregarVideosArchive(idAlvo) {
+  async function carregarVideosArchive(idAlvo, tentativas = 3) {
     const colecoes = Array.isArray(idAlvo) ? idAlvo : [idAlvo];
     const todosEpisodios = [];
     
-    // Busca sequencial mantida internamente para estabilidade das coleções
     for (const id of colecoes) {
-      try {
-        let urlAPI = `https://archive.org/metadata/${id}`;
-        let resposta = await fetch(urlAPI);
+      let sucesso = false;
+      for (let t = 0; t < tentativas; t++) {
+        try {
+          let urlAPI = `https://archive.org/metadata/${id}`;
+          let resposta = await fetch(urlAPI);
 
-        if (!resposta.ok) {
-          urlAPI = `https://api.allorigins.win/raw?url=${encodeURIComponent(urlAPI)}`;
-          resposta = await fetch(urlAPI);
-        }
-
-        if (resposta.ok) {
-          const dadosMeta = await resposta.json();
-          if (dadosMeta.files) {
-            let arquivos = dadosMeta.files.filter(f => 
-              f.name && 
-              f.name.toLowerCase().endsWith('.mp4') && 
-              !f.name.endsWith('_thumb.mp4') &&
-              (f.format === 'h.264' || f.format === '512Kb MPEG4' || f.format === 'MPEG4' || !f.format)
-            );
-
-            if (arquivos.length === 0) {
-              arquivos = dadosMeta.files.filter(f => f.name && f.name.toLowerCase().endsWith('.mp4') && !f.name.endsWith('_thumb.mp4'));
-            }
-            
-            let eps = arquivos
-              .filter(f => {
-                if (id === "YuYuHakushoDublado") {
-                  const dur = converterParaSegundos(f.length);
-                  if (dur > 2700) return false;
-                }
-
-                if (id === "a-grande-familia-dvd") {
-                  const dur = converterParaSegundos(f.length);
-                  if (dur < 1500) return false;
-                }
-
-                return true;
-              })
-              .sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
-
-            if (id === "naruto-shippuuden-021-720p") {
-              eps = eps.slice(0, 79);
-            }
-
-            const mapeados = eps.map(f => ({
-              titulo: f.title || f.name.replace(/\.mp4$/i, ''),
-              url: `https://archive.org/download/${id}/${encodeURIComponent(f.name)}`,
-              duracao: converterParaSegundos(f.length)
-            }));
-
-            todosEpisodios.push(...mapeados);
+          if (!resposta.ok) {
+            urlAPI = `https://api.allorigins.win/raw?url=${encodeURIComponent(urlAPI)}`;
+            resposta = await fetch(urlAPI);
           }
+
+          if (resposta.ok) {
+            const dadosMeta = await resposta.json();
+            if (dadosMeta.files) {
+              let arquivos = dadosMeta.files.filter(f => 
+                f.name && 
+                f.name.toLowerCase().endsWith('.mp4') && 
+                !f.name.endsWith('_thumb.mp4') &&
+                (f.format === 'h.264' || f.format === '512Kb MPEG4' || f.format === 'MPEG4' || !f.format)
+              );
+
+              if (arquivos.length === 0) {
+                arquivos = dadosMeta.files.filter(f => f.name && f.name.toLowerCase().endsWith('.mp4') && !f.name.endsWith('_thumb.mp4'));
+              }
+              
+              let eps = arquivos
+                .filter(f => {
+                  if (id === "YuYuHakushoDublado") {
+                    const dur = converterParaSegundos(f.length);
+                    if (dur > 2700) return false;
+                  }
+
+                  if (id === "a-grande-familia-dvd") {
+                    const dur = converterParaSegundos(f.length);
+                    if (dur < 1500) return false;
+                  }
+
+                  return true;
+                })
+                .sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+
+              if (id === "naruto-shippuuden-021-720p") {
+                eps = eps.slice(0, 79);
+              }
+
+              const mapeados = eps.map(f => ({
+                titulo: f.title || f.name.replace(/\.mp4$/i, ''),
+                url: `https://archive.org/download/${id}/${encodeURIComponent(f.name)}`,
+                duracao: converterParaSegundos(f.length)
+              }));
+
+              todosEpisodios.push(...mapeados);
+              sucesso = true;
+              break;
+            }
+          }
+        } catch (erro) {
+          console.warn(`Tentativa ${t + 1} falhou para o ID ${id}. Tentando novamente...`);
+          await new Promise(r => setTimeout(r, 1000));
         }
-      } catch (erro) {
-        console.error("Erro ao buscar metadados no Archive:", erro);
       }
     }
 
@@ -482,7 +487,6 @@
 
       const atracoesCarregadas = [];
 
-      // Carregamento estritamente sequencial das atrações
       for (const atr of blocoConfig.atracoes) {
         const nomeAlvo = (typeof atr.nomePrograma === 'object' && atr.nomePrograma !== null)
           ? (atr.nomePrograma[diaDaSemana] || Object.values(atr.nomePrograma)[0])
@@ -520,7 +524,6 @@
           const epIdx = attrPointers[i];
           const ep = attr.episodios[epIdx];
 
-          // Padronização de duração para evitar inconsistências nos metadados
           const dur = (ep.duracao && ep.duracao > 300) ? ep.duracao : 1320;
 
           if (currentSec + dur > blockEndSec + 300) {
