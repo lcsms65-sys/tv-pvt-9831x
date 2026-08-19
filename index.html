@@ -166,7 +166,7 @@
     </div>
 
     <div class="painel-dev">
-      ⚠️ <b>Atenção:</b> Transmissão contínua em bloco. Caso um vídeo apresente erro, o sistema pulará automaticamente para a próxima atração.
+      ⚠️ <b>Atenção:</b> Transmissão contínua em 4 blocos. Caso um vídeo apresente erro, o sistema pulará automaticamente para a próxima atração.
     </div>
   </div>
 
@@ -548,7 +548,7 @@
     gradeAutomated.forEach((item, idx) => {
       if (gradeAutomated[idx + 1]) {
         const prox = gradeAutomated[idx + 1];
-        item.proximo = `${prox.h} - ${prox.nomePrograma} (${prox.nomeBloco})`;
+        item.proximo = ` ${prox.nomePrograma} (${prox.nomeBloco})`;
       } else {
         item.proximo = "23:00 - Transmissão Encerrada";
       }
