@@ -444,12 +444,15 @@
             
             let eps = arquivos
               .filter(f => {
+                const dur = converterParaSegundos(f.length);
+                
+                // Ignora vídeos das coleções que tenham menos de 4 minutos (240 segundos)
+                if (dur > 0 && dur < 240) return false;
+
                 if (id === "YuYuHakushoDublado") {
-                  const dur = converterParaSegundos(f.length);
                   if (dur > 2700) return false;
                 }
                 if (id === "a-grande-familia-dvd") {
-                  const dur = converterParaSegundos(f.length);
                   if (dur < 1500) return false;
                 }
                 return true;
