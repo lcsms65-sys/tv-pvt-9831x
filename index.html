@@ -588,15 +588,14 @@
   function tocarProximoEpisodioSemCorte() {
     const agora = new Date();
     const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
+    const limiteNoite = horaParaMinutos("23:00") * 60;
     const programaAtual = gradeAutomated[indiceAtual];
 
     if (programaAtual && segundosHoje < (programaAtual.mFim * 60)) {
       const segundosRestantesNoBloco = (programaAtual.mFim * 60) - segundosHoje;
 
       if (programaAtual.listaEpisodios && programaAtual.listaEpisodios.length > 1) {
-        
         let epEncontradoIndex = -1;
-
         const proximoIndexPadrao = (programaAtual.epIndexAtual + 1) % programaAtual.listaEpisodios.length;
         const proximoEpPadrao = programaAtual.listaEpisodios[proximoIndexPadrao];
         const duracaoPadrao = proximoEpPadrao.duracao > 0 ? proximoEpPadrao.duracao : 420;
@@ -604,12 +603,9 @@
         if (duracaoPadrao <= segundosRestantesNoBloco) {
           epEncontradoIndex = proximoIndexPadrao;
         } else {
-          console.log(`⚠️ O próximo episódio (${Math.round(duracaoPadrao/60)} min) excede os ${Math.round(segundosRestantesNoBloco/60)} min restantes. Procurando um menor...`);
-          
           for (let i = 0; i < programaAtual.listaEpisodios.length; i++) {
             const testEp = programaAtual.listaEpisodios[i];
             const duracaoTest = testEp.duracao > 0 ? testEp.duracao : 420;
-
             if (duracaoTest <= segundosRestantesNoBloco) {
               epEncontradoIndex = i;
               break;
@@ -620,17 +616,8 @@
         if (epEncontradoIndex !== -1) {
           programaAtual.epIndexAtual = epEncontradoIndex;
           programaAtual.u = programaAtual.listaEpisodios[epEncontradoIndex].url;
-          console.log(`✅ Tocando episódio index [${epEncontradoIndex}] que cabe nos ${Math.round(segundosRestantesNoBloco/60)} min restantes.`);
-          
           executarMidia(indiceAtual, false);
           return;
-        } else {
-          console.log(`🛑 Nenhum episódio cabe nos ${Math.round(segundosRestantesNoBloco/60)} min restantes. Indo para o intervalo...`);
-          const proximoPrograma = gradeAutomated[indiceAtual + 1];
-          if (proximoPrograma) {
-            exibirTelaIntervalo(proximoPrograma);
-            return;
-          }
         }
       }
     }
@@ -638,12 +625,11 @@
     const proximoIndice = indiceAtual + 1;
     const proximoPrograma = gradeAutomated[proximoIndice];
 
-    if (proximoPrograma && segundosHoje < (horaParaMinutos("23:00") * 60)) {
-      if (segundosHoje < (proximoPrograma.m * 60)) {
+    if (segundosHoje < limiteNoite) {
+      if (proximoPrograma) {
         exibirTelaIntervalo(proximoPrograma);
       } else {
-        indiceAtual = proximoIndice;
-        executarMidia(indiceAtual, false);
+        exibirTelaIntervalo({ h: "23:00", m: 1380, n: "Transmissão Encerrada" });
       }
     } else {
       encerrarSinalMadrugada();
@@ -804,7 +790,14 @@
           if (proximoPrograma) {
             exibirTelaIntervalo(proximoPrograma);
           } else {
-            encerrarSinalMadrugada();
+            // Se já excedeu a duração e é o último programa (Batman do Futuro), verifica se deu 23h
+            const limiteNoite = horaParaMinutos("23:00") * 60;
+            const segHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
+            if (segHoje < limiteNoite) {
+              exibirTelaIntervalo({ h: "23:00", m: 1380, n: "Transmissão Encerrada" });
+            } else {
+              encerrarSinalMadrugada();
+            }
           }
         } else if (segundosDecorridos > 0) {
           player.currentTime = segundosDecorridos;
@@ -825,8 +818,17 @@
     const index = gradeAutomated.indexOf(programa);
     const proximoPrograma = gradeAutomated[index + 1];
     
-    if (proximoPrograma) {
-      exibirTelaIntervalo(proximoPrograma);
+    const agora = new Date();
+    const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
+    const limiteNoite = horaParaMinutos("23:00") * 60;
+
+    if (segundosHoje < limiteNoite) {
+      if (proximoPrograma) {
+        exibirTelaIntervalo(proximoPrograma);
+      } else {
+        // Se for o último programa (Batman do Futuro) e falhou antes das 23:00, exibe intervalo
+        exibirTelaIntervalo({ h: "23:00", m: 1380, n: "Transmissão Encerrada" });
+      }
       tentarReconectarProgramaEmSegundoPlano(programa, index);
     } else {
       encerrarSinalMadrugada();
