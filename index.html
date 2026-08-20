@@ -704,7 +704,7 @@
       testVideo.onerror = function() {
         if (!tentouProxyTeste) {
           tentouProxyTeste = true;
-          testVideo.src = `https://corsproxy.io/?${encodeURIComponent(programa.u)}`;
+          testVideo.src = `https://api.allorigins.win/raw?url=${encodeURIComponent(programa.u)}`;
         } else {
           console.warn(`⏳ [Reconexão Auto] Servidor indisponível para "${programa.n}". Nova tentativa em 20 segundos...`);
           testVideo.removeAttribute('src');
@@ -753,7 +753,7 @@
       if (!player.dataset.tentouProxy) {
         player.dataset.tentouProxy = "true";
         console.warn(`⚠️ Falha ao carregar link direto de "${programa.n}". Tentando via Proxy...`);
-        player.src = `https://corsproxy.io/?${encodeURIComponent(programa.u)}`;
+        player.src = `https://api.allorigins.win/raw?url=${encodeURIComponent(programa.u)}`;
         return;
       }
 
