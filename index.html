@@ -424,13 +424,11 @@
         if (resposta && resposta.ok) {
           const dadosMeta = await resposta.json();
           if (dadosMeta.files) {
-            // 1. Prioriza arquivos leves derivados (.ia.mp4 ou _512kb.mp4)
             let arquivos = dadosMeta.files.filter(f => 
               f.name && 
               (f.name.toLowerCase().endsWith('.ia.mp4') || f.name.toLowerCase().endsWith('_512kb.mp4'))
             );
 
-            // 2. Se não encontrar versões leves, busca os arquivos MP4 normais
             if (arquivos.length === 0) {
               arquivos = dadosMeta.files.filter(f => 
                 f.name && 
@@ -440,7 +438,6 @@
               );
             }
 
-            // 3. Fallback de segurança se nada for filtrado
             if (arquivos.length === 0) {
               arquivos = dadosMeta.files.filter(f => f.name && f.name.toLowerCase().endsWith('.mp4') && !f.name.endsWith('_thumb.mp4'));
             }
@@ -451,12 +448,10 @@
                   const dur = converterParaSegundos(f.length);
                   if (dur > 2700) return false;
                 }
-
                 if (id === "a-grande-familia-dvd") {
                   const dur = converterParaSegundos(f.length);
                   if (dur < 1500) return false;
                 }
-
                 return true;
               })
               .sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
@@ -642,7 +637,7 @@
     document.getElementById('next').innerText = `${proximoPrograma.h} - ${proximoPrograma.n}`;
     
     const player = document.getElementById('player');
-    delete player.dataset.tentouProxy;
+    delete player.dataset.tentouRetry;
     
     player.onerror = function() {
       console.error("Erro ao carregar vídeo de intervalo local. Aguardando a hora do próximo programa...");
@@ -691,7 +686,7 @@
       const testVideo = document.createElement('video');
       testVideo.preload = 'metadata';
 
-      let tentouProxyTeste = false;
+      let tentouRetryTeste = false;
 
       testVideo.oncanplay = function() {
         console.log(`✅ [Reconexão Auto] Sinal de "${programa.n}" recuperado! Retornando à transmissão normal...`);
@@ -702,9 +697,9 @@
       };
 
       testVideo.onerror = function() {
-        if (!tentouProxyTeste) {
-          tentouProxyTeste = true;
-          testVideo.src = `https://api.allorigins.win/raw?url=${encodeURIComponent(programa.u)}`;
+        if (!tentouRetryTeste) {
+          tentouRetryTeste = true;
+          testVideo.src = `${programa.u}?retry=${Date.now()}`;
         } else {
           console.warn(`⏳ [Reconexão Auto] Servidor indisponível para "${programa.n}". Nova tentativa em 20 segundos...`);
           testVideo.removeAttribute('src');
@@ -728,7 +723,7 @@
     const player = document.getElementById('player');
     player.loop = false;
     player.removeAttribute('crossorigin');
-    delete player.dataset.tentouProxy;
+    delete player.dataset.tentouRetry;
 
     document.getElementById('current').innerText = programa.n;
     document.getElementById('next').innerText = programa.proximo;
@@ -750,14 +745,15 @@
         return;
       }
 
-      if (!player.dataset.tentouProxy) {
-        player.dataset.tentouProxy = "true";
-        console.warn(`⚠️ Falha ao carregar link direto de "${programa.n}". Tentando via Proxy...`);
-        player.src = `https://api.allorigins.win/raw?url=${encodeURIComponent(programa.u)}`;
+      // CORREÇÃO: Fallback direto usando bypass de cache no lugar de proxy de terceiros
+      if (!player.dataset.tentouRetry) {
+        player.dataset.tentouRetry = "true";
+        console.warn(`⚠️ Instabilidade no Archive.org para "${programa.n}". Tentando reconectar diretamente...`);
+        player.src = `${programa.u}?retry=${Date.now()}`;
         return;
       }
 
-      delete player.dataset.tentouProxy;
+      delete player.dataset.tentouRetry;
       tratarErroOuDemora(programa);
     };
 
@@ -790,7 +786,6 @@
           if (proximoPrograma) {
             exibirTelaIntervalo(proximoPrograma);
           } else {
-            // Se já excedeu a duração e é o último programa (Batman do Futuro), verifica se deu 23h
             const limiteNoite = horaParaMinutos("23:00") * 60;
             const segHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
             if (segHoje < limiteNoite) {
@@ -826,7 +821,6 @@
       if (proximoPrograma) {
         exibirTelaIntervalo(proximoPrograma);
       } else {
-        // Se for o último programa (Batman do Futuro) e falhou antes das 23:00, exibe intervalo
         exibirTelaIntervalo({ h: "23:00", m: 1380, n: "Transmissão Encerrada" });
       }
       tentarReconectarProgramaEmSegundoPlano(programa, index);
