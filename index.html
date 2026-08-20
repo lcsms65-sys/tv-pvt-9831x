@@ -424,13 +424,23 @@
         if (resposta && resposta.ok) {
           const dadosMeta = await resposta.json();
           if (dadosMeta.files) {
+            // 1. Prioriza arquivos leves derivados (.ia.mp4 ou _512kb.mp4)
             let arquivos = dadosMeta.files.filter(f => 
               f.name && 
-              f.name.toLowerCase().endsWith('.mp4') && 
-              !f.name.endsWith('_thumb.mp4') &&
-              (f.format === 'h.264' || f.format === '512Kb MPEG4' || f.format === 'MPEG4' || !f.format)
+              (f.name.toLowerCase().endsWith('.ia.mp4') || f.name.toLowerCase().endsWith('_512kb.mp4'))
             );
 
+            // 2. Se não encontrar versões leves, busca os arquivos MP4 normais
+            if (arquivos.length === 0) {
+              arquivos = dadosMeta.files.filter(f => 
+                f.name && 
+                f.name.toLowerCase().endsWith('.mp4') && 
+                !f.name.endsWith('_thumb.mp4') &&
+                (f.format === 'h.264' || f.format === '512Kb MPEG4' || f.format === 'MPEG4' || !f.format)
+              );
+            }
+
+            // 3. Fallback de segurança se nada for filtrado
             if (arquivos.length === 0) {
               arquivos = dadosMeta.files.filter(f => f.name && f.name.toLowerCase().endsWith('.mp4') && !f.name.endsWith('_thumb.mp4'));
             }
@@ -456,7 +466,7 @@
             }
 
             return eps.map(f => ({
-              titulo: f.title || f.name.replace(/\.mp4$/i, ''),
+              titulo: f.title || f.name.replace(/(\.ia)?\.mp4$/i, ''),
               url: `https://archive.org/download/${id}/${encodeURIComponent(f.name)}`,
               duracao: converterParaSegundos(f.length)
             }));
@@ -765,7 +775,6 @@
       tratarErroOuDemora(programa);
     };
 
-    // Reduzido o timeout de 60s para 20s para resposta mais rápida contra telas pretas
     timeoutCarregamento = setTimeout(() => {
       if (player.readyState === 0) {
         console.warn(`⏳ Servidor do Archive excedeu o limite de 20s sem responder para: ${programa.n}. Alternando para intervalo...`);
