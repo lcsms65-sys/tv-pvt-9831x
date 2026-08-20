@@ -172,7 +172,6 @@
 
 <script>
   const URL_VIDEO_INTERVALO = "Intervalo.mp4";
-  const URL_VIDEO_SUBSTITUTO = "https://archive.org/download/desenhos-tres-espias-demais-totally-spies-2001-2014/Tr%C3%AAs%20Espi%C3%A3s%20Demais%20%28Totally%20Spies%21%20-%202001-2014%29%2FTemporada%2001%20%282001%20%E2%88%95%202002%29%2F001%20Uma%20Queda%20Por%20M%C3%BAsicos%20%282001%29.ia.mp4";
 
   let timeoutCarregamento = null;
   let timerReconexao = null;
@@ -642,7 +641,6 @@
     
     const player = document.getElementById('player');
     delete player.dataset.tentouRetry;
-    delete player.dataset.usandoSubstituto;
     
     player.onerror = function() {
       console.error("Erro ao carregar vídeo de intervalo local. Aguardando a hora do próximo programa...");
@@ -729,7 +727,6 @@
     player.loop = false;
     player.removeAttribute('crossorigin');
     delete player.dataset.tentouRetry;
-    delete player.dataset.usandoSubstituto;
 
     document.getElementById('current').innerText = programa.n;
     document.getElementById('next').innerText = programa.proximo;
@@ -765,7 +762,7 @@
 
     timeoutCarregamento = setTimeout(() => {
       if (player.readyState === 0) {
-        console.warn(`⏳ Servidor do Archive excedeu o limite de 20s sem responder para: ${programa.n}. Alternando para programa substituto...`);
+        console.warn(`⏳ Servidor do Archive excedeu o limite de 20s sem responder para: ${programa.n}. Alternando para intervalo...`);
         tratarErroOuDemora(programa);
       }
     }, 20000);
@@ -817,27 +814,8 @@
   function tratarErroOuDemora(programa) {
     if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
     const index = gradeAutomated.indexOf(programa);
-    const player = document.getElementById('player');
-
-    // Se ainda não tentou o substituto (Três Espiãs Demais), tenta carregar ele primeiro
-    if (!player.dataset.usandoSubstituto) {
-      player.dataset.usandoSubstituto = "true";
-      console.warn(`📺 [Substituição] O programa "${programa.n}" apresentou erro. Carregando "Três Espiãs Demais"...`);
-      
-      document.getElementById('current').innerText = `${programa.n} (Exibindo: Três Espiãs Demais)`;
-      
-      player.src = URL_VIDEO_SUBSTITUTO;
-      if (tvLigada) {
-        player.play().then(() => { player.muted = false; }).catch(() => {});
-      }
-      
-      tentarReconectarProgramaEmSegundoPlano(programa, index);
-      return;
-    }
-
-    // Se até o programa substituto falhar, direciona para o intervalo ou encerramento
-    delete player.dataset.usandoSubstituto;
     const proximoPrograma = gradeAutomated[index + 1];
+    
     const agora = new Date();
     const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
     const limiteNoite = horaParaMinutos("23:00") * 60;
