@@ -675,43 +675,40 @@
   function tentarReconectarProgramaEmSegundoPlano(programa, index) {
     limparTimerReconexao();
 
-    timerReconexao = setInterval(() => {
+    timerReconexao = setInterval(async () => {
       const agora = new Date();
       const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
 
+      // Se o horário do programa já passou, cancela as tentativas
       if (minutosHoje >= programa.mFim) {
         limparTimerReconexao();
         return;
       }
 
-      console.log(`🔄 [Reconexão Auto] Testando sinal do programa "${programa.n}" em segundo plano...`);
+      console.log(`🔄 [Reconexão Auto] Consultando API do Archive para reativar "${programa.n}"...`);
 
-      const testVideo = document.createElement('video');
-      testVideo.preload = 'metadata';
+      // Em vez de testar a URL antiga, busca a lista atualizada de vídeos na API
+      const idAlvo = (typeof programacaoConfig[index].idArchive === 'object' && programacaoConfig[index].idArchive !== null && !Array.isArray(programacaoConfig[index].idArchive))
+        ? programacaoConfig[index].idArchive[DIAS_SEMANA[agora.getDay()]]
+        : programacaoConfig[index].idArchive;
 
-      let tentouRetryTeste = false;
+      const novosEpisodios = await carregarVideosArchive(idAlvo);
 
-      testVideo.oncanplay = function() {
-        console.log(`✅ [Reconexão Auto] Sinal de "${programa.n}" recuperado! Retornando à transmissão normal...`);
+      if (novosEpisodios && novosEpisodios.length > 0) {
+        console.log(`✅ [Reconexão Auto] Sinal de "${programa.n}" recuperado com sucesso!`);
         limparTimerReconexao();
-        testVideo.removeAttribute('src');
-        testVideo.load();
+        
+        // Atualiza a lista e o link do programa
+        programa.listaEpisodios = novosEpisodios;
+        programa.epIndexAtual = Math.floor((agora - new Date(agora.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24)) % novosEpisodios.length;
+        programa.u = novosEpisodios[programa.epIndexAtual].url;
+
+        // Retoma a transmissão do programa no player principal
         executarMidia(index, true);
-      };
-
-      testVideo.onerror = function() {
-        if (!tentouRetryTeste) {
-          tentouRetryTeste = true;
-          testVideo.src = `${programa.u}?retry=${Date.now()}`;
-        } else {
-          console.warn(`⏳ [Reconexão Auto] Servidor indisponível para "${programa.n}". Nova tentativa em 20 segundos...`);
-          testVideo.removeAttribute('src');
-          testVideo.load();
-        }
-      };
-
-      testVideo.src = programa.u;
-    }, 20000);
+      } else {
+        console.warn(`⏳ [Reconexão Auto] Servidor do Archive ainda indisponível para "${programa.n}". Nova tentativa em 30 segundos...`);
+      }
+    }, 30000); // Tenta a cada 30 segundos para não sobrecarregar a rede
   }
 
   function executarMidia(index, sincronizarSegundos) {
@@ -751,7 +748,7 @@
       // CORREÇÃO: Fallback direto usando bypass de cache no lugar de proxy de terceiros
       if (!player.dataset.tentouRetry) {
         player.dataset.tentouRetry = "true";
-        console.warn(`⚠️ Instabilidade no Archive.org para "${programa.n}". Tentando reconectar diretamente...`);
+        consolewarn(`⚠️ Instabilidade no Archive.org para "${programa.n}". Tentando reconectar diretamente...`);
         player.src = `${programa.u}?retry=${Date.now()}`;
         return;
       }
