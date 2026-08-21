@@ -516,6 +516,7 @@
         mFim: mFim,
         n: nomeAlvo,
         u: urlEp,
+        idArchive: idAlvo,
         listaEpisodios: episodios,
         epIndexAtual: epIndexInicial
       };
@@ -687,10 +688,8 @@
 
       console.log(`🔄 [Reconexão Auto] Consultando API do Archive para reativar "${programa.n}"...`);
 
-      // Em vez de testar a URL antiga, busca a lista atualizada de vídeos na API
-      const idAlvo = (typeof programacaoConfig[index].idArchive === 'object' && programacaoConfig[index].idArchive !== null && !Array.isArray(programacaoConfig[index].idArchive))
-        ? programacaoConfig[index].idArchive[DIAS_SEMANA[agora.getDay()]]
-        : programacaoConfig[index].idArchive;
+      // Usa o idArchive armazenado diretamente no objeto do programa da grade
+      const idAlvo = programa.idArchive;
 
       const novosEpisodios = await carregarVideosArchive(idAlvo);
 
@@ -748,7 +747,7 @@
       // CORREÇÃO: Fallback direto usando bypass de cache no lugar de proxy de terceiros
       if (!player.dataset.tentouRetry) {
         player.dataset.tentouRetry = "true";
-        consolewarn(`⚠️ Instabilidade no Archive.org para "${programa.n}". Tentando reconectar diretamente...`);
+        console.warn(`⚠️ Instabilidade no Archive.org para "${programa.n}". Tentando reconectar diretamente...`);
         player.src = `${programa.u}?retry=${Date.now()}`;
         return;
       }
