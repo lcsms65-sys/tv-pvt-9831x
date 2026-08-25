@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>TV Online LL - WebTV Oficial</title>
+  <style>
+    body { 
+      background-color: #003399; 
+      color: #fff; 
+      font-family: Arial, sans-serif; 
+      text-align: center; 
+      padding: 20px;
+      margin: 0;
+      overflow-x: hidden;
+    }
+    .container { max-width: 800px; margin: 0 auto; }
+    .logo-site { margin-bottom: 15px; }
+    
+    .player-container { 
+      border: 4px solid #ffcc00; 
+      border-radius: 12px; 
+      overflow: hidden; 
+      background-color: #000; 
+      margin-bottom: 15px;
+      position: relative;
+    }
+    
+    video { width: 100%; display: block; }
+
+    #modulo-tv:fullscreen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #000;
+      width: 100vw;
+      height: 100vh;
+      border: none;
+      border-radius: 0;
+    }
+
+    #modulo-tv:-webkit-full-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #000;
+      width: 100vw;
+      height: 100vh;
+      border: none;
+      border-radius: 0;
+    }
+
+    #modulo-tv:fullscreen video,
+    #modulo-tv:-webkit-full-screen video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .marca-dagua {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 80px;
+      opacity: 0.5;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .btn-fullscreen {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      border: 2px solid #ffcc00;
+      padding: 8px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.85rem;
+      z-index: 15;
+      transition: 0.2s;
+    }
+    .btn-fullscreen:hover { background: #ffcc00; color: #000; }
+
+    .tela-inicial {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 51, 153, 0.95);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+    }
+    .btn-ligar {
+      background-color: #ffcc00;
+      color: #000;
+      font-weight: bold;
+      font-size: 1.5rem;
+      padding: 15px 40px;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transition: 0.2s;
+    }
+    .btn-ligar:hover { background-color: #00ffcc; transform: scale(1.05); }
+
+    .info-box { 
+      background-color: rgba(0,0,0,0.7); 
+      padding: 15px; 
+      border-radius: 8px;
+      text-align: left;
+    }
+    .now-playing { color: #00ffcc; font-size: 1.2rem; margin-bottom: 8px; }
+    .next-program { color: #ffcc00; font-size: 1rem; }
+
+    /* ESTILOS DA GRADE DE PROGRAMAÇÃO */
+    .grade-box { 
+      background-color: rgba(0, 0, 0, 0.7); 
+      padding: 15px; 
+      border-radius: 8px;
+      margin-top: 15px;
+      text-align: left;
+      max-height: 350px;
+      overflow-y: auto;
+    }
+    .grade-box h3 {
+      margin: 0 0 10px 0;
+      color: #ffcc00;
+      font-size: 1.1rem;
+      border-bottom: 1px solid #ffcc00;
+      padding-bottom: 6px;
+    }
+    .grade-item {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 0.95rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .grade-item.ativo {
+      background-color: rgba(0, 255, 204, 0.2);
+      color: #00ffcc;
+      font-weight: bold;
+      border-left: 4px solid #00ffcc;
+    }
+    
+    .clock { 
+      position: fixed; 
+      top: 10px; 
+      right: 10px; 
+      background: #000; 
+      padding: 5px 15px; 
+      border-radius: 5px;
+      border: 1px solid #ffcc00;
+      font-weight: bold;
+      z-index: 30;
+    }
+
+    .painel-dev {
+      margin-top: 20px;
+      background: #222;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px dashed #ffcc00;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="clock" id="clock">--:--</div>
+
+  <div class="container">
+    <div class="logo-site">
+      <img src="logo TVOnlineLL.png" style="width: 80px !important; height: auto;" alt="TV Online LL">
+    </div>
+    
+    <div class="player-container" id="modulo-tv">
+      
+      <div class="tela-inicial" id="tela-start">
+        <h2>Sinal da TV Online LL Pronto</h2>
+        <button class="btn-ligar" onclick="ligarTelevisao()">📺 LIGAR A TV</button>
+      </div>
+
+      <img src="logo TVOnlineLL2.png" class="marca-dagua" style="width: 160px !important; height: auto;" alt="Logo TV">
+      
+      <button class="btn-fullscreen" onclick="toggleFullScreen()">🔲 TELA CHEIA</button>
+      
+      <video id="player" autoplay playsinline preload="metadata"></video>
+    </div>
+    
+    <div class="info-box">
+      <div class="now-playing">📺 AGORA: <span id="current">Carregando sinal...</span></div>
+      <div class="next-program">➡️ A SEGUIR: <span id="next">Carregando...</span></div>
+    </div>
+
+    <!-- PAINEL DA GRADE COMPLETA -->
+    <div class="grade-box">
+      <h3>📋 Programação do Dia</h3>
+      <div id="grade-lista"></div>
+    </div>
+
+    <div class="painel-dev">
+      ⚠️ <b>Atenção:</b> Qualquer problema, informe ao administrador. | Alguns vídeos podem apresentar um idioma diferente. | Se um vídeo não iniciar por instabilidade no servidor, aguarde o início automático.
+    </div>
+  </div>
+
+<script>
+  const URL_VIDEO_INTERVALO = "Intervalo.mp4";
+
+  let timeoutCarregamento = null;
+  let timerReconexao = null;
+  let tvLigada = false;
+
+  function atualizarRelogio() {
+    const agora = new Date();
+    const h = String(agora.getHours()).padStart(2, '0');
+    const m = String(agora.getMinutes()).padStart(2, '0');
+    const s = String(agora.getSeconds()).padStart(2, '0');
+
+    document.getElementById('clock').innerText = `${h}:${m}`;
+
+    if (h === '07' && m === '00' && s === '00') {
+      console.log("⏰ 07:00 da manhã! Reativando sinal da transmissão...");
+      inicializarGradeAutomatica();
+    }
+  }
+  setInterval(atualizarRelogio, 1000);
+  atualizarRelogio();
+
+  const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+
+  const GRADE_UNIFICADA = [
+    { h: "07:00", dur: 30, padrao: { n: "Coragem, o Cão Covarde", id: "coragemcaocovarde-backup" } },
+    { h: "07:30", dur: 30, padrao: { n: "As Aventuras de Jackie Chan", id: "as-aventuras-de-jackie-chan-Completo-paixaoflix" } },
+    { h: "08:00", dur: 30, padrao: { n: "Caverna do Dragão", id: "caverna-do-dragao-1983-480p" } },
+    {
+      h: "08:30",
+      dur: 30,
+      padrao: { n: "Três Espiãs Demais", id: "desenhos-tres-espias-demais-totally-spies-2001-2014" },
+      exceto: { dom: { n: "Martin Mystery", id: "20221114_20221114_1323" } }
+    },
+    {
+      h: "09:00",
+      dur: 30,
+      padrao: { n: "Avatar: A Lenda de Aang", id: ["PaixaoFlix-Livro-1-Agua", "PaixaoFlix-Livro-2-Terra", "PaixaoFlix-Livro-3-Fogo"] },
+      exceto: { sab: { n: "Dragon Ball Z", id: "DBZCN" } }
+    },
+    {
+      h: "09:30",
+      dur: 30,
+      padrao: { n: "X-Men: A Série Animada", id: "X-MenTheAnimatedSeriesDublado" },
+      exceto: { sab: { n: "Dragon Ball Super", id: "DragonBallSuperCartoonNetworkBR" }, dom: { n: "X-Men Evolution", id: "desenhos-x-men-evolution-20002003_202501" } }
+    },
+    {
+      h: "10:00",
+      dur: 30,
+      padrao: { n: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", id: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501" },
+      exceto: { qua: { n: "Os Vingadores: A Série", id: "os-vingadores-a-serie-dublado" }, sex: { n: "Vingadores Unidos", id: "os-vingadores-unidos-dublado" }, sab: { n: "Power Rangers Dino Trovão", id: "power-rangers-dino-trovao-episodios" }, dom: { n: "O Que Há de Novo, Scooby-Doo?", id: "o-que-ha-de-novo-scooby-doo-1-temp" } }
+    },
+    {
+      h: "10:30",
+      dur: 30,
+      padrao: { n: "Homem-Aranha: A Série Animada (1994)", id: "homem-aranhaaserieanimada" },
+      exceto: { qui: { n: "Homem-Aranha: Ação Sem Limites", id: "homem-aranha-acao-sem-limites" }, sex: { n: "Homem-Aranha: A Nova Série Animada", id: "homem-aranha-a-nova-serie-animada-dublado" }, sab: { n: "Ultimate Homem-Aranha", id: "ultimate-homem-aranha-dublado" }, dom: { n: "O Espetacular Homem-Aranha", id: "o-espetacular-homem-aranha-2008-dublado_202606" } }
+    },
+    {
+      h: "11:00",
+      dur: 30,
+      padrao: { n: "Super Choque", id: "PaixaoFlix-Super-Choque-Completo" },
+      exceto: { sab: { n: "Mickey e Donald", id: "mickey-e-donald-a-mina-de-ouro-do-pato-donald" }, dom: { n: "Dragon Ball Z Kai", id: "DBZKaiCNBR" } }
+    },
+    {
+      h: "11:30",
+      dur: 30,
+      padrao: { n: "Eu, A Patroa e as Crianças", id: "e.-p.-c-s-01-e-09-terminando-e-quebrando-720p" },
+      exceto: { sab: { n: "A Grande Família", id: "a-grande-familia-dvd" } }
+    },
+    {
+      h: "12:00",
+      dur: 30,
+      padrao: { n: "Um Maluco no Pedaço", id: "um-maluco-no-pedaco-6x-18" },
+      exceto: { sab: { n: "Todo Mundo Odeia o Chris", id: ["PaixaoFlix-Todo-Mundo-Odeia-o-Chris-1-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-2-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-3-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-4-Temporada"] } }
+    },
+    {
+      h: "12:30",
+      dur: { padrao: 30, sab: 60 },
+      padrao: { n: "Todo Mundo Odeia o Chris", id: ["PaixaoFlix-Todo-Mundo-Odeia-o-Chris-1-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-2-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-3-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-4-Temporada"] },
+      exceto: { sab: { n: "Sai de Baixo", id: ["sai-de-baixo", "sdb-4temp"] } }
+    },
+    {
+      h: "13:00",
+      dur: 30,
+      padrao: { n: "Os Camundongos Aventureiros", id: ["desenho-animado-os-camundongos-aventureiros-1-temporada-completa", "desenho-animado-os-camundongos-aventureiros-2-temporada-completa"] },
+      exceto: { dom: { n: "Mickey e Donald", id: "mickey-e-donald-a-mina-de-ouro-do-pato-donald" } }
+    },
+    {
+      h: "13:30",
+      dur: 30,
+      padrao: { n: "Clássicos Disney", id: "disneymickeypatetadonaldplutoclassicos" },
+      exceto: { sab: { n: "Os Cavaleiros do Zodíaco", id: ["cavaleirosdozodiaco", "cavaleirosdozodiaco_202107", "cavaleiros.-do.-zodiaco-03-saga-doze-casas", "cavaleiros-do-zodiaco-04-saga-asgard"] }, dom: { n: "A Família Dinossauro", id: "17.-o-dia-da-geladeira_202605" } }
+    },
+    {
+      h: "14:00",
+      dur: 30,
+      padrao: { n: "Os Cavaleiros do Zodíaco", id: ["cavaleirosdozodiaco", "cavaleirosdozodiaco_202107", "cavaleiros.-do.-zodiaco-03-saga-doze-casas", "cavaleiros-do-zodiaco-04-saga-asgard"] },
+      exceto: { sab: { n: "Batman do Futuro", id: "desenhos-004-batman-do-futuro-batman-beyond-19992001" } }
+    },
+    {
+      h: "14:30",
+      dur: 30,
+      padrao: { n: "Dragon Ball (Clássico)", id: "DragonBallCNBR" },
+      exceto: { sab: { n: "Batman: A Série Animada", id: "desenhos-batman-a-serie-animada-19921995" }, dom: { n: "Dragon Ball GT", id: "DragonBallGTCNBR" } }
+    },
+    {
+      h: "15:00",
+      dur: 30,
+      padrao: { n: "Dragon Ball Super", id: "DragonBallSuperCartoonNetworkBR" },
+      exceto: { ter: { n: "Dragon Ball Daima", id: "DragonBallDaimaAdultSwimBrasil" }, qui: { n: "Dragon Ball GT", id: "DragonBallGTCNBR" }, sab: { n: "Fullmetal Alchemist", id: "fullmetal-completo-pt-br" }, dom: { n: "As Tartarugas Mutantes Ninja", id: "tartarugasninja2003" } }
+    },
+    {
+      h: "15:30",
+      dur: 30,
+      padrao: { n: "As Tartarugas Mutantes Ninja", id: "tartarugasninja2003" },
+      exceto: { sab: { n: "Fullmetal Alchemist", id: "fullmetal-completo-pt-br" }, dom: { n: "Ultimate Homem-Aranha", id: "ultimate-homem-aranha-dublado" } }
+    },
+    {
+      h: "16:00",
+      dur: 30,
+      padrao: { n: "Avatar: A Lenda de Korra", id: ["PaixaoFlix-Avatar-A-Lenda-de-Korra-1a-Temporada", "PaixaoFlix-Avatar-A-Lenda-de-Korra-2a-Temporada", "PaixaoFlix-Avatar-A-Lenda-de-Korra-3a-Temporada", "PaixaoFlix-Avatar-A-Lenda-de-Korra-4a-Temporada-Completa"] },
+      exceto: { sab: { n: "Yu-Gi-Oh!", id: "2000-yu-gi-oh-s-01" } }
+    },
+    {
+      h: "16:30",
+      dur: 30,
+      padrao: { n: "Fullmetal Alchemist", id: "fullmetal-completo-pt-br" },
+      exceto: { sab: { n: "As Tartarugas Mutantes Ninja", id: "tartarugasninja2003" }, dom: { n: "Power Rangers Dino Trovão", id: "power-rangers-dino-trovao-episodios" } }
+    },
+    {
+      h: "17:00",
+      dur: 30,
+      padrao: { n: "A Família Dinossauro", id: "17.-o-dia-da-geladeira_202605" },
+      exceto: { sab: { n: "Avatar: A Lenda de Korra", id: ["PaixaoFlix-Avatar-A-Lenda-de-Korra-1a-Temporada", "PaixaoFlix-Avatar-A-Lenda-de-Korra-2a-Temporada", "PaixaoFlix-Avatar-A-Lenda-de-Korra-3a-Temporada", "PaixaoFlix-Avatar-A-Lenda-de-Korra-4a-Temporada-Completa"] }, dom: { n: "Um Maluco no Pedaço", id: "um-maluco-no-pedaco-6x-18" } }
+    },
+    {
+      h: "17:30",
+      dur: 30,
+      padrao: { n: "Superman: A Série Animada", id: ["superman-s-01-e-01-the-last-son-of-krypton-part-i", "superman-s-02-e-01-the-prometheon", "superman-s-03-e-02-knight-time", "superman-s-04-e-03-legacy-part-two"] },
+      exceto: { sab: { n: "O Batman (2004-2008)", id: "o-batman-2004-2008" }, dom: { n: "As Novas Aventuras do Batman", id: "desenhos-as-novas-aventuras-do-batman-19971999" } }
+    },
+    {
+      h: "18:00",
+      dur: 30,
+      padrao: { n: "Naruto Clássico", id: "NarutoCNBR" },
+      exceto: { sab: { n: "Naruto Shippuden", id: "naruto-shippuuden-021-720p" } }
+    },
+    {
+      h: "18:30",
+      dur: 30,
+      padrao: { n: "Naruto Shippuden", id: "naruto-shippuuden-021-720p" },
+      exceto: { sab: { n: "Hunter x Hunter (1999)", id: "hunter-x-hunter-1999-pt-br-004" } }
+    },
+    {
+      h: "19:00",
+      dur: 30,
+      padrao: { n: "Yu-Gi-Oh!", id: "2000-yu-gi-oh-s-01" },
+      exceto: { sab: { n: "Dois Homens e Meio", id: "capa_20250815" } }
+    },
+    {
+      h: "19:30",
+      dur: 30,
+      padrao: { n: "Yu Yu Hakusho", id: "YuYuHakushoDublado" },
+      exceto: { ter: { n: "Hunter x Hunter (1999)", id: "hunter-x-hunter-1999-pt-br-004" }, qui: { n: "Hunter x Hunter (1999)", id: "hunter-x-hunter-1999-pt-br-004" }, sab: { n: "Kenan & Kel", id: ["PaixaoFlix-1-Temp", "PaixaoFlix-2-Temp", "PaixaoFlix-Kenan-e-Kel-3oTemp", "PaixaoFlix-Kenan-e-Kel-4oTemp"] } }
+    },
+    {
+      h: "20:00",
+      dur: 30,
+      padrao: { n: "Dois Homens e Meio", id: "capa_20250815" },
+      exceto: { sab: { n: "Futurama", id: "fut01" }}
+    },
+    {
+      h: "20:30",
+      dur: 30,
+      padrao: { n: "Kenan & Kel", id: ["PaixaoFlix-1-Temp", "PaixaoFlix-2-Temp", "PaixaoFlix-Kenan-e-Kel-3oTemp", "PaixaoFlix-Kenan-e-Kel-4oTemp"] },
+      exceto: { sab: { n: "Batman: Os Bravos e os Destemidos", id: "batman-os-bravos-e-destemidos-2008-2011" } }
+    },
+    { h: "21:00", dur: 30, padrao: { n: "Futurama", id: "fut01" } },
+    {
+      h: "21:30",
+      dur: 30,
+      padrao: { n: "Batman: Os Bravos e os Destemidos", id: "batman-os-bravos-e-destemidos-2008-2011" },
+      exceto: { ter: { n: "O Batman (2004-2008)", id: "o-batman-2004-2008" }, qui: { n: "As Novas Aventuras do Batman", id: "desenhos-as-novas-aventuras-do-batman-19971999" } }
+    },
+    {
+      h: "22:00",
+      dur: 60,
+      padrao: { n: "Stranger Things", id: ["PaixaoFlix-Stranger-Things-2016-1a-Temporada", "PaixaoFlix-Stranger-Things-2017-2a-Temporada", "PaixaoFlix-Stranger-Things-3a-Temporada", "PaixaoFlix-Stranger-Things-4a-Temporada", "PaixaoFlix-Stranger-Things-4a-Temporada-2022-VOLUME-2"] },
+      exceto: { dom: { n: "Invencível", id: "invenciveldublado" } }
+    }
+  ];
+
+  let gradeAutomated = [];
+  let indiceAtual = -1;
+
+  function converterParaSegundos(val) {
+    if (!val) return 0;
+    if (typeof val === 'number') return val;
+    if (typeof val === 'string') {
+      if (val.includes(':')) {
+        const partes = val.split(':').map(Number);
+        if (partes.length === 3) return partes[0] * 3600 + partes[1] * 60 + partes[2];
+        if (partes.length === 2) return partes[0] * 60 + partes[1];
+      }
+      return parseFloat(val) || 0;
+    }
+    return 0;
+  }
+
+  function horaParaMinutos(horarioStr) {
+    const [h, m] = horarioStr.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  function limparTimerReconexao() {
+    if (timerReconexao) {
+      clearInterval(timerReconexao);
+      timerReconexao = null;
+    }
+  }
+
+  function atualizarListaGrade() {
+    const container = document.getElementById('grade-lista');
+    if (!container) return;
+
+    container.innerHTML = gradeAutomated.map((item, i) => `
+      <div class="grade-item ${i === indiceAtual ? 'ativo' : ''}">
+        <span><b>${item.h}</b> - ${item.n}</span>
+        ${i === indiceAtual ? '<span>🔴 NO AR</span>' : ''}
+      </div>
+    `).join('');
+  }
+
+  async function carregarVideosArchive(idAlvo) {
+    const colecoes = Array.isArray(idAlvo) ? idAlvo : [idAlvo];
+    
+    const requisicoes = colecoes.map(async (id) => {
+      const maxTentativas = 3;
+      let resposta = null;
+
+      for (let tentativa = 1; tentativa <= maxTentativas; tentativa++) {
+        try {
+          let urlAPI = `https://archive.org/metadata/${id}`;
+          if (tentativa === maxTentativas) {
+            urlAPI = `https://api.allorigins.win/raw?url=${encodeURIComponent(urlAPI)}`;
+          }
+
+          resposta = await fetch(urlAPI);
+          if (resposta.ok) break;
+        } catch (e) {
+          console.warn(`⚠️ Tentativa ${tentativa}/${maxTentativas} para a API (${id}) falhou. Retentando...`);
+          if (tentativa < maxTentativas) {
+            await new Promise(r => setTimeout(r, 1500));
+          }
+        }
+      }
+
+      try {
+        if (resposta && resposta.ok) {
+          const dadosMeta = await resposta.json();
+          if (dadosMeta.files) {
+            let arquivos = dadosMeta.files.filter(f => 
+              f.name && 
+              (f.name.toLowerCase().endsWith('.ia.mp4') || f.name.toLowerCase().endsWith('_512kb.mp4'))
+            );
+
+            if (arquivos.length === 0) {
+              arquivos = dadosMeta.files.filter(f => 
+                f.name && 
+                f.name.toLowerCase().endsWith('.mp4') && 
+                !f.name.endsWith('_thumb.mp4') &&
+                (f.format === 'h.264' || f.format === '512Kb MPEG4' || f.format === 'MPEG4' || !f.format)
+              );
+            }
+
+            if (arquivos.length === 0) {
+              arquivos = dadosMeta.files.filter(f => f.name && f.name.toLowerCase().endsWith('.mp4') && !f.name.endsWith('_thumb.mp4'));
+            }
+            
+            let eps = arquivos
+              .filter(f => {
+                const dur = converterParaSegundos(f.length);
+                
+                if (dur > 0 && dur < 240) return false;
+                if (id === "YuYuHakushoDublado") {
+                  if (dur > 2700) return false;
+                }
+                if (id === "a-grande-familia-dvd") {
+                  if (dur < 1500) return false;
+                }
+                return true;
+              })
+              .sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+
+            if (id === "naruto-shippuuden-021-720p") {
+              eps = eps.slice(0, 79);
+            }
+
+            return eps.map(f => ({
+              titulo: f.title || f.name.replace(/(\.ia)?\.mp4$/i, ''),
+              url: `https://archive.org/download/${id}/${encodeURIComponent(f.name)}`,
+              duracao: converterParaSegundos(f.length)
+            }));
+          }
+        }
+        return [];
+      } catch (erro) {
+        console.error("Erro ao buscar metadados no Archive:", erro);
+        return [];
+      }
+    });
+
+    const resultados = await Promise.all(requisicoes);
+    return resultados.flat();
+  }
+
+  function getSlotParaDia(slot, siglaDia) {
+    if (slot.exceto && slot.exceto[siglaDia]) {
+      return slot.exceto[siglaDia];
+    }
+    return slot.padrao;
+  }
+
+  function getDuracaoParaDia(slot, siglaDia) {
+    if (typeof slot.dur === 'number') return slot.dur;
+    if (slot.dur[siglaDia]) return slot.dur[siglaDia];
+    return slot.dur.padrao;
+  }
+
+  async function inicializarGradeAutomatica() {
+    gradeAutomated = [];
+    const hoje = new Date();
+    const diaDaSemana = DIAS_SEMANA[hoje.getDay()];
+    const diaDoAno = Math.floor((hoje - new Date(hoje.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+
+    const promessasProgs = GRADE_UNIFICADA.map(async (slot) => {
+      const progInfo = getSlotParaDia(slot, diaDaSemana);
+      if (!progInfo) return null;
+
+      const mInicio = horaParaMinutos(slot.h);
+      const duracao = getDuracaoParaDia(slot, diaDaSemana);
+      const mFim = mInicio + duracao;
+
+      const episodios = await carregarVideosArchive(progInfo.id);
+      
+      let epIndexInicial = 0;
+      let urlEp = URL_VIDEO_INTERVALO;
+      if (episodios.length > 0) {
+        epIndexInicial = diaDoAno % episodios.length;
+        urlEp = episodios[epIndexInicial].url;
+      }
+
+      return {
+        h: slot.h,
+        m: mInicio,
+        mFim: mFim,
+        n: progInfo.n,
+        u: urlEp,
+        idArchive: progInfo.id,
+        listaEpisodios: episodios,
+        epIndexAtual: epIndexInicial
+      };
+    });
+
+    const resultadosGerais = await Promise.all(promessasProgs);
+    
+    gradeAutomated = resultadosGerais.filter(item => item !== null).sort((a, b) => a.m - b.m);
+
+    gradeAutomated.forEach((item, idx) => {
+      item.proximo = gradeAutomated[idx + 1] ? `${gradeAutomated[idx + 1].h} - ${gradeAutomated[idx + 1].n}` : "23:00 - Transmissão Encerrada";
+    });
+    
+    atualizarListaGrade();
+
+    const player = document.getElementById('player');
+    if (player) {
+      player.onended = function() {
+        if (!player.loop) {
+          tocarProximoEpisodioSemCorte();
+        }
+      };
+    }
+
+    iniciarTransmissaoInicial();
+  }
+
+  function encerrarSinalMadrugada() {
+    limparTimerReconexao();
+    document.getElementById('current').innerText = "😴 Transmissão Encerrada (Voltamos às 07:00)";
+    document.getElementById('next').innerText = "📺 07:00 - Coragem, o Cão Covarde";
+    const player = document.getElementById('player');
+    if (player) {
+      player.loop = false;
+      player.pause();
+      player.removeAttribute('src');
+      player.load();
+    }
+  }
+
+  function iniciarTransmissaoInicial() {
+    const agora = new Date();
+    const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
+
+    if (minutosHoje >= horaParaMinutos("23:00") || minutosHoje < horaParaMinutos("07:00")) {
+      encerrarSinalMadrugada();
+      return;
+    }
+
+    indiceAtual = -1;
+    for (let i = 0; i < gradeAutomated.length; i++) {
+      if (minutosHoje >= gradeAutomated[i].m && minutosHoje < gradeAutomated[i].mFim) {
+        indiceAtual = i;
+        break;
+      }
+    }
+
+    if (indiceAtual !== -1) {
+      executarMidia(indiceAtual, true);
+    } else {
+      const proximoPrograma = gradeAutomated.find(p => p.m > minutosHoje);
+      if (proximoPrograma) {
+        exibirTelaIntervalo(proximoPrograma);
+      } else {
+        encerrarSinalMadrugada();
+      }
+    }
+  }
+
+  function tocarProximoEpisodioSemCorte() {
+    const agora = new Date();
+    const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
+    const limiteNoite = horaParaMinutos("23:00") * 60;
+    const programaAtual = gradeAutomated[indiceAtual];
+
+    if (programaAtual && segundosHoje < (programaAtual.mFim * 60)) {
+      const segundosRestantesNoBloco = (programaAtual.mFim * 60) - segundosHoje;
+
+      if (programaAtual.listaEpisodios && programaAtual.listaEpisodios.length > 1) {
+        let epEncontradoIndex = -1;
+        const proximoIndexPadrao = (programaAtual.epIndexAtual + 1) % programaAtual.listaEpisodios.length;
+        const proximoEpPadrao = programaAtual.listaEpisodios[proximoIndexPadrao];
+        const duracaoPadrao = proximoEpPadrao.duracao > 0 ? proximoEpPadrao.duracao : 420;
+
+        if (duracaoPadrao <= segundosRestantesNoBloco) {
+          epEncontradoIndex = proximoIndexPadrao;
+        } else {
+          for (let i = 0; i < programaAtual.listaEpisodios.length; i++) {
+            const testEp = programaAtual.listaEpisodios[i];
+            const duracaoTest = testEp.duracao > 0 ? testEp.duracao : 420;
+            if (duracaoTest <= segundosRestantesNoBloco) {
+              epEncontradoIndex = i;
+              break;
+            }
+          }
+        }
+
+        if (epEncontradoIndex !== -1) {
+          programaAtual.epIndexAtual = epEncontradoIndex;
+          programaAtual.u = programaAtual.listaEpisodios[epEncontradoIndex].url;
+          executarMidia(indiceAtual, false);
+          return;
+        }
+      }
+    }
+
+    const proximoIndice = indiceAtual + 1;
+    const proximoPrograma = gradeAutomated[proximoIndice];
+
+    if (segundosHoje < limiteNoite) {
+      if (proximoPrograma) {
+        exibirTelaIntervalo(proximoPrograma);
+      } else {
+        exibirTelaIntervalo({ h: "23:00", m: 1380, n: "Transmissão Encerrada" });
+      }
+    } else {
+      encerrarSinalMadrugada();
+    }
+  }
+
+  function exibirTelaIntervalo(proximoPrograma) {
+    if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+    document.getElementById('current').innerText = "⏸️ Intervalo Comercial";
+    document.getElementById('next').innerText = `${proximoPrograma.h} - ${proximoPrograma.n}`;
+    
+    const player = document.getElementById('player');
+    delete player.dataset.tentouRetry;
+    
+    player.onerror = function() {
+      console.error("Erro ao carregar vídeo de intervalo local. Aguardando o próximo programa...");
+      player.onerror = null;
+    };
+
+    player.loop = true;
+    player.removeAttribute('crossorigin');
+    player.src = URL_VIDEO_INTERVALO;
+    
+    player.muted = false;
+    player.volume = 1.0;
+    
+    if (tvLigada) {
+      player.play().then(() => { player.muted = false; }).catch(() => {});
+    }
+
+    const checarIntervalo = setInterval(() => {
+      const agora = new Date();
+      const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
+
+      if (minutosHoje >= proximoPrograma.m) {
+        clearInterval(checarIntervalo);
+        limparTimerReconexao();
+        player.loop = false;
+        indiceAtual = gradeAutomated.indexOf(proximoPrograma);
+        executarMidia(indiceAtual, false);
+      }
+    }, 3000);
+  }
+
+  function tentarReconectarProgramaEmSegundoPlano(programa, index) {
+    limparTimerReconexao();
+
+    timerReconexao = setInterval(async () => {
+      const agora = new Date();
+      const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
+
+      if (minutosHoje >= programa.mFim) {
+        limparTimerReconexao();
+        return;
+      }
+
+      console.log(`🔄 [Reconexão Auto] Consultando API do Archive para reativar "${programa.n}"...`);
+
+      const idAlvo = programa.idArchive;
+      const novosEpisodios = await carregarVideosArchive(idAlvo);
+
+      if (novosEpisodios && novosEpisodios.length > 0) {
+        console.log(`✅ [Reconexão Auto] Sinal de "${programa.n}" recuperado com sucesso!`);
+        limparTimerReconexao();
+        
+        programa.listaEpisodios = novosEpisodios;
+        programa.epIndexAtual = Math.floor((agora - new Date(agora.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24)) % novosEpisodios.length;
+        programa.u = novosEpisodios[programa.epIndexAtual].url;
+
+        executarMidia(index, true);
+      } else {
+        console.warn(`⏳ [Reconexão Auto] Servidor do Archive ainda indisponível para "${programa.n}". Nova tentativa em 30 segundos...`);
+      }
+    }, 30000);
+  }
+
+  function executarMidia(index, sincronizarSegundos) {
+    limparTimerReconexao();
+    const programa = gradeAutomated[index];
+    if (!programa) return;
+
+    if (programa.listaEpisodios && programa.listaEpisodios.length > 0) {
+      programa.u = programa.listaEpisodios[programa.epIndexAtual].url;
+    }
+
+    const player = document.getElementById('player');
+    player.loop = false;
+    player.removeAttribute('crossorigin');
+    delete player.dataset.tentouRetry;
+
+    document.getElementById('current').innerText = programa.n;
+    document.getElementById('next').innerText = programa.proximo;
+
+    atualizarListaGrade();
+
+    if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+
+    player.onerror = function(e) {
+      if (player.error) {
+        const codigosErro = {
+          1: "DOWNLOAD_ABORTADO (A reprodução foi cancelada)",
+          2: "ERRO_DE_REDE (Servidor do Archive demorou ou cortou a conexão)",
+          3: "ERRO_DE_DECODIFICACAO (Arquivo ou codec corrompido)",
+          4: "FORMATO_NAO_SUPORTADO (Browser não suporta o codec deste arquivo)"
+        };
+        console.error(`❌ Falha no programa (${programa.n}):`, codigosErro[player.error.code] || player.error.code);
+      }
+
+      if (player.src && player.src.includes(URL_VIDEO_INTERVALO)) {
+        return;
+      }
+
+      if (!player.dataset.tentouRetry) {
+        player.dataset.tentouRetry = "true";
+        console.warn(`⚠️ Instabilidade no Archive.org para "${programa.n}". Tentando reconectar diretamente...`);
+        player.src = `${programa.u}?retry=${Date.now()}`;
+        return;
+      }
+
+      delete player.dataset.tentouRetry;
+      tratarErroOuDemora(programa);
+    };
+
+    timeoutCarregamento = setTimeout(() => {
+      if (player.readyState === 0) {
+        console.warn(`⏳ Servidor do Archive excedeu o limite de 20s sem responder para: ${programa.n}. Alternando para intervalo...`);
+        tratarErroOuDemora(programa);
+      }
+    }, 20000);
+
+    player.oncanplay = function() {
+      if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+    };
+
+    player.src = programa.u;
+    
+    player.muted = false;
+    player.volume = 1.0;
+
+    if (sincronizarSegundos) {
+      const agora = new Date();
+      const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
+      const segundosHoje = agora.getSeconds();
+      const minutosDecorridos = minutosHoje - programa.m;
+      const segundosDecorridos = (minutosDecorridos * 60) + segundosHoje;
+
+      player.addEventListener('loadedmetadata', function() {
+        if (segundosDecorridos >= player.duration) {
+          const proximoPrograma = gradeAutomated[index + 1];
+          if (proximoPrograma) {
+            exibirTelaIntervalo(proximoPrograma);
+          } else {
+            const limiteNoite = horaParaMinutos("23:00") * 60;
+            const segHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
+            if (segHoje < limiteNoite) {
+              exibirTelaIntervalo({ h: "23:00", m: 1380, n: "Transmissão Encerrada" });
+            } else {
+              encerrarSinalMadrugada();
+            }
+          }
+        } else if (segundosDecorridos > 0) {
+          player.currentTime = segundosDecorridos;
+          if (tvLigada) {
+            player.play().then(() => { player.muted = false; }).catch(err => console.log("Aguardando interação do usuário...", err));
+          }
+        }
+      }, { once: true });
+    } else {
+      if (tvLigada) {
+        player.play().then(() => { player.muted = false; }).catch(err => console.log("Aguardando interação...", err));
+      }
+    }
+  }
+
+  function tratarErroOuDemora(programa) {
+    if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+    const index = gradeAutomated.indexOf(programa);
+    const proximoPrograma = gradeAutomated[index + 1];
+    
+    const agora = new Date();
+    const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
+    const limiteNoite = horaParaMinutos("23:00") * 60;
+
+    if (segundosHoje < limiteNoite) {
+      if (proximoPrograma) {
+        exibirTelaIntervalo(proximoPrograma);
+      } else {
+        exibirTelaIntervalo({ h: "23:00", m: 1380, n: "Transmissão Encerrada" });
+      }
+      tentarReconectarProgramaEmSegundoPlano(programa, index);
+    } else {
+      encerrarSinalMadrugada();
+    }
+  }
+
+  function ligarTelevisao() {
+    tvLigada = true;
+    document.getElementById('tela-start').style.display = 'none';
+    const player = document.getElementById('player');
+    
+    player.muted = false;
+    player.volume = 1.0;
+    
+    player.play().then(() => { player.muted = false; }).catch(err => console.log("Erro ao reproduzir ao ligar:", err));
+  }
+
+  function toggleFullScreen() {
+    const modulo = document.getElementById('modulo-tv');
+    if (!document.fullscreenElement) {
+      if (modulo.requestFullscreen) modulo.requestFullscreen();
+      else if (modulo.webkitRequestFullscreen) modulo.webkitRequestFullscreen();
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', inicializarGradeAutomatica);
+</script>
+</body>
+</html>
