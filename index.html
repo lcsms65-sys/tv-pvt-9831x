@@ -410,7 +410,6 @@
   </div>
 
 <script>
-
   // Desativa o menu de botão direito em toda a página do site
   document.addEventListener('contextmenu', event => event.preventDefault());
 
@@ -802,8 +801,7 @@
         u: urlEp,
         idArchive: progInfo.id,
         listaEpisodios: episodios,
-        epIndexAtual: epIndexInicial,
-        etapaFallback: 0
+        epIndexAtual: epIndexInicial
       };
     });
 
@@ -930,6 +928,7 @@
     document.getElementById('current').innerText = "Intervalo Comercial";
     
     const player = document.getElementById('player');
+    delete player.dataset.tentouRetry;
     
     player.onerror = function() {
       console.error("Erro ao carregar vídeo de intervalo local. Aguardando o próximo programa...");
@@ -973,96 +972,24 @@
         return;
       }
 
-      console.log(`🔄 [Reconexão Auto API] Consultando metadata do Archive para "${programa.n}"...`);
+      console.log(`🔄 [Reconexão Auto] Consultando API do Archive para reativar "${programa.n}"...`);
 
       const idAlvo = programa.idArchive;
       const novosEpisodios = await carregarVideosArchive(idAlvo);
 
       if (novosEpisodios && novosEpisodios.length > 0) {
-        console.log(`✅ [Reconexão Auto API] Sinal de "${programa.n}" recuperado via API!`);
+        console.log(`✅ [Reconexão Auto] Sinal de "${programa.n}" recuperado com sucesso!`);
         limparTimerReconexao();
         
         programa.listaEpisodios = novosEpisodios;
         programa.epIndexAtual = Math.floor((agora - new Date(agora.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24)) % novosEpisodios.length;
         programa.u = novosEpisodios[programa.epIndexAtual].url;
-        programa.etapaFallback = 0;
 
         executarMidia(index, true);
       } else {
-        console.warn(`⏳ [Reconexão Auto API] Servidor do Archive ainda indisponível para "${programa.n}". Tentando novamente em 30s...`);
+        console.warn(`⏳ [Reconexão Auto] Servidor do Archive ainda indisponível para "${programa.n}". Nova tentativa em 30 segundos...`);
       }
     }, 30000);
-  }
-
-  function aplicarEstrategiaFallback(programa, index) {
-    if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
-
-    const player = document.getElementById('player');
-    if (player.src && player.src.includes(URL_VIDEO_INTERVALO)) return;
-
-    programa.etapaFallback = (programa.etapaFallback || 0) + 1;
-    console.warn(`⚠️ [Cascata ${programa.etapaFallback}/4] Falha no vídeo "${programa.n}". Aplicando alternativa...`);
-
-    // Estratégia 1: Retry direto com parâmetro na URL
-    if (programa.etapaFallback === 1) {
-      console.log("👉 Tentativa 1: Reload direto na mesma URL (?retry)");
-      const urlBase = programa.u.split('?')[0];
-      player.src = `${urlBase}?retry=${Date.now()}`;
-      configurarTimeoutCarregamento(programa, index);
-      return;
-    }
-
-    // Estratégia 2: Servidor espelho (ia801501.us.archive.org)
-    if (programa.etapaFallback === 2) {
-      console.log("👉 Tentativa 2: Servidor Espelho (ia801501.us.archive.org)");
-      let urlMirror = programa.u.replace("https://archive.org/download/", "https://ia801501.us.archive.org/items/");
-      urlMirror = urlMirror.split('?')[0] + `?retry=${Date.now()}`;
-      player.src = urlMirror;
-      configurarTimeoutCarregamento(programa, index);
-      return;
-    }
-
-    // Estratégia 3: Alternar formato/qualidade (.mp4 <-> .ia.mp4 <-> _512kb.mp4)
-    if (programa.etapaFallback === 3) {
-      console.log("👉 Tentativa 3: Alternar formato/qualidade de arquivo");
-      let urlAlt = programa.u.split('?')[0];
-      if (urlAlt.endsWith('.ia.mp4')) {
-        urlAlt = urlAlt.replace('.ia.mp4', '.mp4');
-      } else if (urlAlt.endsWith('_512kb.mp4')) {
-        urlAlt = urlAlt.replace('_512kb.mp4', '.mp4');
-      } else if (urlAlt.endsWith('.mp4')) {
-        urlAlt = urlAlt.replace(/\.mp4$/i, '.ia.mp4');
-      }
-      player.src = `${urlAlt}?retry=${Date.now()}`;
-      configurarTimeoutCarregamento(programa, index);
-      return;
-    }
-
-    // Estratégia 4: Tentar o próximo episódio disponível na lista em memória
-    if (programa.etapaFallback === 4 && programa.listaEpisodios && programa.listaEpisodios.length > 1) {
-      console.log("👉 Tentativa 4: Carregar próximo episódio da memória");
-      programa.epIndexAtual = (programa.epIndexAtual + 1) % programa.listaEpisodios.length;
-      programa.u = programa.listaEpisodios[programa.epIndexAtual].url;
-      programa.etapaFallback = 0;
-      executarMidia(index, false);
-      return;
-    }
-
-    // Se todas as 4 tentativas locais falharem, alterna para intervalo e faz requisição de API em 2º plano
-    console.error(`❌ Todas as estratégias em memória falharam para "${programa.n}". Entrando em intervalo comercial...`);
-    programa.etapaFallback = 0;
-    tratarErroOuDemora(programa);
-  }
-
-  function configurarTimeoutCarregamento(programa, index) {
-    if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
-    timeoutCarregamento = setTimeout(() => {
-      const player = document.getElementById('player');
-      if (player.readyState === 0) {
-        console.warn(`⏳ Limite de tempo (15s) atingido sem resposta do vídeo.`);
-        aplicarEstrategiaFallback(programa, index);
-      }
-    }, 15000);
   }
 
   function executarMidia(index, sincronizarSegundos) {
@@ -1077,25 +1004,54 @@
     const player = document.getElementById('player');
     player.loop = false;
     player.removeAttribute('crossorigin');
+    delete player.dataset.tentouRetry;
 
     document.getElementById('current-time').innerText = programa.h;
     document.getElementById('current').innerText = programa.n;
 
     atualizarListaGrade();
 
-    player.onerror = function() {
-      if (player.src && player.src.includes(URL_VIDEO_INTERVALO)) return;
-      aplicarEstrategiaFallback(programa, index);
+    if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+
+    player.onerror = function(e) {
+      if (player.error) {
+        const codigosErro = {
+          1: "DOWNLOAD_ABORTADO",
+          2: "ERRO_DE_REDE",
+          3: "ERRO_DE_DECODIFICACAO",
+          4: "FORMATO_NAO_SUPORTADO"
+        };
+        console.error(`❌ Falha no programa (${programa.n}):`, codigosErro[player.error.code] || player.error.code);
+      }
+
+      if (player.src && player.src.includes(URL_VIDEO_INTERVALO)) {
+        return;
+      }
+
+      if (!player.dataset.tentouRetry) {
+        player.dataset.tentouRetry = "true";
+        console.warn(`⚠️ Instabilidade no Archive.org para "${programa.n}". Tentando reconectar diretamente...`);
+        player.src = `${programa.u}?retry=${Date.now()}`;
+        return;
+      }
+
+      delete player.dataset.tentouRetry;
+      tratarErroOuDemora(programa);
     };
+
+    timeoutCarregamento = setTimeout(() => {
+      if (player.readyState === 0) {
+        console.warn(`⏳ Servidor do Archive excedeu o limite de 20s sem responder para: ${programa.n}. Alternando para intervalo...`);
+        tratarErroOuDemora(programa);
+      }
+    }, 20000);
 
     player.oncanplay = function() {
       if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
-      programa.etapaFallback = 0;
     };
 
-    configurarTimeoutCarregamento(programa, index);
-
     player.src = programa.u;
+    
     player.muted = false;
     player.volume = 1.0;
 
@@ -1123,7 +1079,7 @@
         } else if (segundosDecorridos > 0) {
           player.currentTime = segundosDecorridos;
           if (tvLigada) {
-            player.play().then(() => { player.muted = false; }).catch(err => console.log("Aguardando interação...", err));
+            player.play().then(() => { player.muted = false; }).catch(err => console.log("Aguardando interação do usuário...", err));
           }
         }
       }, { once: true });
