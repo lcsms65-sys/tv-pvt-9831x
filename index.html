@@ -67,7 +67,11 @@
       position: relative;
     }
     
-    video { width: 100%; display: block; }
+    video { 
+      width: 100%; 
+      display: block; 
+      pointer-events: none; /* Desativa cliques e menu do botão direito sobre o vídeo */
+    }
 
     /* TELA CHEIA PADRÃO W3C */
     #modulo-tv:fullscreen {
@@ -406,6 +410,9 @@
   </div>
 
 <script>
+  // Desativa o menu de botão direito em toda a página do site
+  document.addEventListener('contextmenu', event => event.preventDefault());
+
   const URL_VIDEO_INTERVALO = "Intervalo.mp4";
 
   let timeoutCarregamento = null;
