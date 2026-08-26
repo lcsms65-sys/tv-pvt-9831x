@@ -70,10 +70,9 @@
     video { 
       width: 100%; 
       display: block; 
-      pointer-events: none; /* Desativa cliques e menu do botão direito sobre o vídeo */
+      pointer-events: none;
     }
 
-    /* TELA CHEIA PADRÃO W3C */
     #modulo-tv:fullscreen {
       width: 100vw !important;
       height: 100vh !important;
@@ -100,7 +99,6 @@
       border: none !important;
     }
 
-    /* TELA CHEIA WEBKIT (CHROME / SAFARI) SEPARADA */
     #modulo-tv:-webkit-full-screen {
       width: 100vw !important;
       height: 100vh !important;
@@ -178,7 +176,6 @@
     }
     .btn-ligar:hover { background-color: #fff; transform: scale(1.05); }
 
-    /* SEÇÕES FOXX KIDS STYLE */
     .tv-section {
       background: #000;
       border: 2px solid #ffcc00;
@@ -201,7 +198,6 @@
       gap: 6px;
     }
 
-    /* AGORA NA WEB TV */
     .agora-container {
       display: flex;
       background-color: #ffcc00;
@@ -257,7 +253,6 @@
       line-height: 1.2;
     }
 
-    /* A SEGUIR */
     .a-seguir-list {
       background-color: #ffcc00;
       color: #000;
@@ -298,7 +293,6 @@
       text-overflow: ellipsis;
     }
 
-    /* GRADE COMPLETA ACCORDION */
     .btn-grade-toggle {
       width: 100%;
       background: #003399;
@@ -374,7 +368,6 @@
       <video id="player" autoplay playsinline preload="metadata"></video>
     </div>
     
-    <!-- AGORA NA WEB TV -->
     <div class="tv-section">
       <div class="tv-section-header">★ AGORA NA TV Online LL</div>
       <div class="agora-container">
@@ -389,15 +382,11 @@
       </div>
     </div>
 
-    <!-- A SEGUIR -->
     <div class="tv-section">
       <div class="tv-section-header">★ A SEGUIR</div>
-      <div class="a-seguir-list" id="a-seguir-lista">
-        <!-- Preenchido via JavaScript -->
-      </div>
+      <div class="a-seguir-list" id="a-seguir-lista"></div>
     </div>
 
-    <!-- BOTÃO E EXPANSÃO DA GRADE COMPLETA -->
     <button class="btn-grade-toggle" onclick="toggleGrade()">Ver Grade Completa</button>
 
     <div class="grade-box" id="grade-box-container" style="display: none;">
@@ -410,14 +399,22 @@
   </div>
 
 <script>
-  // Desativa o menu de botão direito em toda a página do site
   document.addEventListener('contextmenu', event => event.preventDefault());
 
   const URL_VIDEO_INTERVALO = "Intervalo.mp4";
+  const STEP_TIMEOUT_MS = 10000; // Timeout reduzido de 20s para 10s por etapa
+
+  const ERROS_MAP = {
+    1: "DOWNLOAD_ABORTADO (MEDIA_ERR_ABORTED)",
+    2: "ERRO_DE_REDE (MEDIA_ERR_NETWORK)",
+    3: "ERRO_DE_DECODIFICACAO (MEDIA_ERR_DECODE)",
+    4: "MIDIA_NAO_SUPORTADA (MEDIA_ERR_SRC_NOT_SUPPORTED)"
+  };
 
   let timeoutCarregamento = null;
   let timerReconexao = null;
   let tvLigada = false;
+  let etapaFallback = 0;
 
   function atualizarRelogio() {
     const agora = new Date();
@@ -924,11 +921,12 @@
 
   function exibirTelaIntervalo(proximoPrograma) {
     if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+    etapaFallback = 0;
+    
     document.getElementById('current-time').innerText = "--:--";
     document.getElementById('current').innerText = "Intervalo Comercial";
     
     const player = document.getElementById('player');
-    delete player.dataset.tentouRetry;
     
     player.onerror = function() {
       console.error("Erro ao carregar vídeo de intervalo local. Aguardando o próximo programa...");
@@ -992,6 +990,53 @@
     }, 30000);
   }
 
+  function aplicarEstrategiaFallback(programa, index) {
+    if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+    etapaFallback++;
+
+    const player = document.getElementById('player');
+    const urlOriginal = programa.listaEpisodios && programa.listaEpisodios.length > 0
+      ? programa.listaEpisodios[programa.epIndexAtual].url
+      : programa.u;
+
+    if (etapaFallback === 1) {
+      console.warn(`⚠️ [Fallback 1/4 - Cache] Tentando recarregar com parâmetro anti-cache...`);
+      player.src = `${urlOriginal}?retry=${Date.now()}`;
+    } else if (etapaFallback === 2) {
+      console.warn(`⚠️ [Fallback 2/4 - Espelho] Tentando servidor espelho (ia801501)...`);
+      player.src = urlOriginal.replace("archive.org/download/", "ia801501.us.archive.org/items/");
+    } else if (etapaFallback === 3) {
+      console.warn(`⚠️ [Fallback 3/4 - Proxy] Tentando via proxy CORS (AllOrigins)...`);
+      player.src = `https://api.allorigins.win/raw?url=${encodeURIComponent(urlOriginal)}`;
+    } else if (etapaFallback === 4) {
+      console.warn(`⚠️ [Fallback 4/4 - Troca de Episódio] Tentando próximo episódio da lista...`);
+      if (programa.listaEpisodios && programa.listaEpisodios.length > 1) {
+        programa.epIndexAtual = (programa.epIndexAtual + 1) % programa.listaEpisodios.length;
+        programa.u = programa.listaEpisodios[programa.epIndexAtual].url;
+        etapaFallback = 0;
+        executarMidia(index, false);
+        return;
+      } else {
+        console.warn(`❌ Não há episódios alternativos na coleção.`);
+        etapaFallback = 0;
+        tratarErroOuDemora(programa);
+        return;
+      }
+    } else {
+      console.error(`❌ Todos os 4 métodos falharam para "${programa.n}". Encaminhando para o comercial...`);
+      etapaFallback = 0;
+      tratarErroOuDemora(programa);
+      return;
+    }
+
+    timeoutCarregamento = setTimeout(() => {
+      if (player.readyState === 0) {
+        console.warn(`⏳ Limite de ${STEP_TIMEOUT_MS / 1000}s atingido no Fallback ${etapaFallback}. Avançando para a próxima etapa...`);
+        aplicarEstrategiaFallback(programa, index);
+      }
+    }, STEP_TIMEOUT_MS);
+  }
+
   function executarMidia(index, sincronizarSegundos) {
     limparTimerReconexao();
     const programa = gradeAutomated[index];
@@ -1004,7 +1049,6 @@
     const player = document.getElementById('player');
     player.loop = false;
     player.removeAttribute('crossorigin');
-    delete player.dataset.tentouRetry;
 
     document.getElementById('current-time').innerText = programa.h;
     document.getElementById('current').innerText = programa.n;
@@ -1014,44 +1058,39 @@
     if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
 
     player.onerror = function(e) {
-      if (player.error) {
-        const codigosErro = {
-          1: "DOWNLOAD_ABORTADO",
-          2: "ERRO_DE_REDE",
-          3: "ERRO_DE_DECODIFICACAO",
-          4: "FORMATO_NAO_SUPORTADO"
-        };
-        console.error(`❌ Falha no programa (${programa.n}):`, codigosErro[player.error.code] || player.error.code);
+      if (player.src && player.src.includes(URL_VIDEO_INTERVALO)) return;
+      
+      const err = player.error;
+      const errCode = err ? err.code : 0;
+      const errText = ERROS_MAP[errCode] || "ERRO_DESCONHECIDO";
+      
+      console.warn(`❌ Erro detectado ao tentar carregar "${programa.n}": Código ${errCode} - ${errText}`);
+
+      // OTIMIZAÇÃO: Se for Erro de Rede (Código 2), salta espelhos e proxies indo direto para a Etapa 4 (troca de episódio)
+      if (errCode === 2 && etapaFallback < 4) {
+        console.warn(`⚡ Erro de rede (MEDIA_ERR_NETWORK) detectado. Saltando direto para o Fallback 4 (troca de episódio)...`);
+        etapaFallback = 3;
       }
 
-      if (player.src && player.src.includes(URL_VIDEO_INTERVALO)) {
-        return;
-      }
-
-      if (!player.dataset.tentouRetry) {
-        player.dataset.tentouRetry = "true";
-        console.warn(`⚠️ Instabilidade no Archive.org para "${programa.n}". Tentando reconectar diretamente...`);
-        player.src = `${programa.u}?retry=${Date.now()}`;
-        return;
-      }
-
-      delete player.dataset.tentouRetry;
-      tratarErroOuDemora(programa);
+      aplicarEstrategiaFallback(programa, index);
     };
 
     timeoutCarregamento = setTimeout(() => {
       if (player.readyState === 0) {
-        console.warn(`⏳ Servidor do Archive excedeu o limite de 20s sem responder para: ${programa.n}. Alternando para intervalo...`);
-        tratarErroOuDemora(programa);
+        console.warn(`⏳ Servidor excedeu ${STEP_TIMEOUT_MS / 1000}s sem responder para "${programa.n}". Iniciando fallbacks...`);
+        aplicarEstrategiaFallback(programa, index);
       }
-    }, 20000);
+    }, STEP_TIMEOUT_MS);
 
     player.oncanplay = function() {
       if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+      etapaFallback = 0;
     };
 
-    player.src = programa.u;
-    
+    if (etapaFallback === 0) {
+      player.src = programa.u;
+    }
+
     player.muted = false;
     player.volume = 1.0;
 
@@ -1092,6 +1131,8 @@
 
   function tratarErroOuDemora(programa) {
     if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+    etapaFallback = 0;
+
     const index = gradeAutomated.indexOf(programa);
     const proximoPrograma = gradeAutomated[index + 1];
     
