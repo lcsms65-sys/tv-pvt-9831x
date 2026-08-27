@@ -402,7 +402,7 @@
   document.addEventListener('contextmenu', event => event.preventDefault());
 
   const URL_VIDEO_INTERVALO = "Intervalo.mp4";
-  const STEP_TIMEOUT_MS = 10000; // Timeout reduzido de 20s para 10s por etapa
+  const STEP_TIMEOUT_MS = 10000;
 
   const ERROS_MAP = {
     1: "DOWNLOAD_ABORTADO (MEDIA_ERR_ABORTED)",
@@ -688,9 +688,8 @@
           resposta = await fetch(urlAPI);
           if (resposta.ok) break;
         } catch (e) {
-          console.warn(`⚠️ Tentativa ${tentativa}/${maxTentativas} para a API (${id}) falhou. Retentando...`);
           if (tentativa < maxTentativas) {
-            await new Promise(r => setTimeout(r, 1500));
+            await new Promise(r => setTimeout(r, 1000));
           }
         }
       }
@@ -720,14 +719,9 @@
             let eps = arquivos
               .filter(f => {
                 const dur = converterParaSegundos(f.length);
-                
                 if (dur > 0 && dur < 240) return false;
-                if (id === "YuYuHakushoDublado") {
-                  if (dur > 2700) return false;
-                }
-                if (id === "a-grande-familia-dvd") {
-                  if (dur < 1500) return false;
-                }
+                if (id === "YuYuHakushoDublado" && dur > 2700) return false;
+                if (id === "a-grande-familia-dvd" && dur < 1500) return false;
                 return true;
               })
               .sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
@@ -745,7 +739,6 @@
         }
         return [];
       } catch (erro) {
-        console.error("Erro ao buscar metadados no Archive:", erro);
         return [];
       }
     });
@@ -755,9 +748,7 @@
   }
 
   function getSlotParaDia(slot, siglaDia) {
-    if (slot.exceto && slot.exceto[siglaDia]) {
-      return slot.exceto[siglaDia];
-    }
+    if (slot.exceto && slot.exceto[siglaDia]) return slot.exceto[siglaDia];
     return slot.padrao;
   }
 
@@ -771,45 +762,28 @@
     gradeAutomated = [];
     const hoje = new Date();
     const diaDaSemana = DIAS_SEMANA[hoje.getDay()];
-    const diaDoAno = Math.floor((hoje - new Date(hoje.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
 
-    const promessasProgs = GRADE_UNIFICADA.map(async (slot) => {
+    GRADE_UNIFICADA.forEach((slot) => {
       const progInfo = getSlotParaDia(slot, diaDaSemana);
-      if (!progInfo) return null;
+      if (!progInfo) return;
 
       const mInicio = horaParaMinutos(slot.h);
       const duracao = getDuracaoParaDia(slot, diaDaSemana);
       const mFim = mInicio + duracao;
 
-      const episodios = await carregarVideosArchive(progInfo.id);
-      
-      let epIndexInicial = 0;
-      let urlEp = URL_VIDEO_INTERVALO;
-      if (episodios.length > 0) {
-        epIndexInicial = diaDoAno % episodios.length;
-        urlEp = episodios[epIndexInicial].url;
-      }
-
-      return {
+      gradeAutomated.push({
         h: slot.h,
         m: mInicio,
         mFim: mFim,
         n: progInfo.n,
-        u: urlEp,
+        u: URL_VIDEO_INTERVALO,
         idArchive: progInfo.id,
-        listaEpisodios: episodios,
-        epIndexAtual: epIndexInicial
-      };
+        listaEpisodios: [],
+        epIndexAtual: 0
+      });
     });
 
-    const resultadosGerais = await Promise.all(promessasProgs);
-    
-    gradeAutomated = resultadosGerais.filter(item => item !== null).sort((a, b) => a.m - b.m);
-
-    gradeAutomated.forEach((item, idx) => {
-      item.proximo = gradeAutomated[idx + 1] ? `${gradeAutomated[idx + 1].h} - ${gradeAutomated[idx + 1].n}` : "23:00 - Transmissão Encerrada";
-    });
-    
+    gradeAutomated.sort((a, b) => a.m - b.m);
     atualizarListaGrade();
 
     const player = document.getElementById('player');
@@ -839,7 +813,7 @@
     }
   }
 
-  function iniciarTransmissaoInicial() {
+  async function iniciarTransmissaoInicial() {
     const agora = new Date();
     const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
 
@@ -848,15 +822,22 @@
       return;
     }
 
-    indiceAtual = -1;
-    for (let i = 0; i < gradeAutomated.length; i++) {
-      if (minutosHoje >= gradeAutomated[i].m && minutosHoje < gradeAutomated[i].mFim) {
-        indiceAtual = i;
-        break;
-      }
-    }
+    indiceAtual = gradeAutomated.findIndex(p => minutosHoje >= p.m && minutosHoje < p.mFim);
 
     if (indiceAtual !== -1) {
+      const programa = gradeAutomated[indiceAtual];
+      document.getElementById('current-time').innerText = programa.h;
+      document.getElementById('current').innerText = programa.n;
+      atualizarListaGrade();
+
+      const episodios = await carregarVideosArchive(programa.idArchive);
+      if (episodios.length > 0) {
+        const diaDoAno = Math.floor((agora - new Date(agora.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+        programa.listaEpisodios = episodios;
+        programa.epIndexAtual = diaDoAno % episodios.length;
+        programa.u = episodios[programa.epIndexAtual].url;
+      }
+
       executarMidia(indiceAtual, true);
     } else {
       const proximoPrograma = gradeAutomated.find(p => p.m > minutosHoje);
@@ -929,7 +910,6 @@
     const player = document.getElementById('player');
     
     player.onerror = function() {
-      console.error("Erro ao carregar vídeo de intervalo local. Aguardando o próximo programa...");
       player.onerror = null;
     };
 
@@ -944,7 +924,7 @@
       player.play().then(() => { player.muted = false; }).catch(() => {});
     }
 
-    const checarIntervalo = setInterval(() => {
+    const checarIntervalo = setInterval(async () => {
       const agora = new Date();
       const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
 
@@ -953,6 +933,17 @@
         limparTimerReconexao();
         player.loop = false;
         indiceAtual = gradeAutomated.indexOf(proximoPrograma);
+
+        if (!proximoPrograma.listaEpisodios || proximoPrograma.listaEpisodios.length === 0) {
+          const episodios = await carregarVideosArchive(proximoPrograma.idArchive);
+          if (episodios.length > 0) {
+            const diaDoAno = Math.floor((agora - new Date(agora.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+            proximoPrograma.listaEpisodios = episodios;
+            proximoPrograma.epIndexAtual = diaDoAno % episodios.length;
+            proximoPrograma.u = episodios[proximoPrograma.epIndexAtual].url;
+          }
+        }
+
         executarMidia(indiceAtual, false);
       }
     }, 3000);
@@ -970,27 +961,20 @@
         return;
       }
 
-      console.log(`🔄 [Reconexão Auto] Consultando API do Archive para reativar "${programa.n}"...`);
-
       const idAlvo = programa.idArchive;
       const novosEpisodios = await carregarVideosArchive(idAlvo);
 
       if (novosEpisodios && novosEpisodios.length > 0) {
-        console.log(`✅ [Reconexão Auto] Sinal de "${programa.n}" recuperado com sucesso!`);
         limparTimerReconexao();
-        
         programa.listaEpisodios = novosEpisodios;
         programa.epIndexAtual = Math.floor((agora - new Date(agora.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24)) % novosEpisodios.length;
         programa.u = novosEpisodios[programa.epIndexAtual].url;
-
         executarMidia(index, true);
-      } else {
-        console.warn(`⏳ [Reconexão Auto] Servidor do Archive ainda indisponível para "${programa.n}". Nova tentativa em 30 segundos...`);
       }
     }, 30000);
   }
 
-function aplicarEstrategiaFallback(programa, index) {
+  function aplicarEstrategiaFallback(programa, index) {
     if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
     etapaFallback++;
 
@@ -1000,16 +984,12 @@ function aplicarEstrategiaFallback(programa, index) {
       : programa.u;
 
     if (etapaFallback === 1) {
-      console.warn(`⚠️ [Fallback 1/3 - Cache] Tentando recarregar com parâmetro anti-cache...`);
       player.src = `${urlOriginal}?retry=${Date.now()}`;
     } else if (etapaFallback === 2) {
-      console.warn(`⚠️ [Fallback 2/3 - Espelho] Tentando servidor espelho (ia801501)...`);
       player.src = urlOriginal.replace("archive.org/download/", "ia801501.us.archive.org/items/");
     } else if (etapaFallback === 3) {
-      console.warn(`⚠️ [Fallback 3/3 - Proxy] Tentando via proxy CORS (AllOrigins)...`);
       player.src = `https://api.allorigins.win/raw?url=${encodeURIComponent(urlOriginal)}`;
     } else {
-      console.error(`❌ Todos os métodos falharam para "${programa.n}". Indo para o comercial para manter sincronia...`);
       etapaFallback = 0;
       tratarErroOuDemora(programa);
       return;
@@ -1017,7 +997,6 @@ function aplicarEstrategiaFallback(programa, index) {
 
     timeoutCarregamento = setTimeout(() => {
       if (player.readyState === 0) {
-        console.warn(`⏳ Limite de ${STEP_TIMEOUT_MS / 1000}s atingido no Fallback ${etapaFallback}. Avançando...`);
         aplicarEstrategiaFallback(programa, index);
       }
     }, STEP_TIMEOUT_MS);
@@ -1043,27 +1022,19 @@ function aplicarEstrategiaFallback(programa, index) {
 
     if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
 
-    player.onerror = function(e) {
+    player.onerror = function() {
       if (player.src && player.src.includes(URL_VIDEO_INTERVALO)) return;
-      
       const err = player.error;
       const errCode = err ? err.code : 0;
-      const errText = ERROS_MAP[errCode] || "ERRO_DESCONHECIDO";
-      
-      console.warn(`❌ Erro detectado ao tentar carregar "${programa.n}": Código ${errCode} - ${errText}`);
 
-      // OTIMIZAÇÃO: Se for Erro de Rede (Código 2), salta espelhos e proxies indo direto para a Etapa 4 (troca de episódio)
-      if (errCode === 2 && etapaFallback < 4) {
-        console.warn(`⚡ Erro de rede (MEDIA_ERR_NETWORK) detectado. Saltando direto para o Fallback 4 (troca de episódio)...`);
-        etapaFallback = 3;
+      if (errCode === 2 && etapaFallback < 3) {
+        etapaFallback = 2;
       }
-
       aplicarEstrategiaFallback(programa, index);
     };
 
     timeoutCarregamento = setTimeout(() => {
       if (player.readyState === 0) {
-        console.warn(`⏳ Servidor excedeu ${STEP_TIMEOUT_MS / 1000}s sem responder para "${programa.n}". Iniciando fallbacks...`);
         aplicarEstrategiaFallback(programa, index);
       }
     }, STEP_TIMEOUT_MS);
@@ -1104,13 +1075,13 @@ function aplicarEstrategiaFallback(programa, index) {
         } else if (segundosDecorridos > 0) {
           player.currentTime = segundosDecorridos;
           if (tvLigada) {
-            player.play().then(() => { player.muted = false; }).catch(err => console.log("Aguardando interação do usuário...", err));
+            player.play().then(() => { player.muted = false; }).catch(() => {});
           }
         }
       }, { once: true });
     } else {
       if (tvLigada) {
-        player.play().then(() => { player.muted = false; }).catch(err => console.log("Aguardando interação...", err));
+        player.play().then(() => { player.muted = false; }).catch(() => {});
       }
     }
   }
@@ -1146,7 +1117,7 @@ function aplicarEstrategiaFallback(programa, index) {
     player.muted = false;
     player.volume = 1.0;
     
-    player.play().then(() => { player.muted = false; }).catch(err => console.log("Erro ao reproduzir ao ligar:", err));
+    player.play().then(() => { player.muted = false; }).catch(() => {});
   }
 
   function toggleFullScreen() {
