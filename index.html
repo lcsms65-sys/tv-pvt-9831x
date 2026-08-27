@@ -990,7 +990,7 @@
     }, 30000);
   }
 
-  function aplicarEstrategiaFallback(programa, index) {
+function aplicarEstrategiaFallback(programa, index) {
     if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
     etapaFallback++;
 
@@ -1000,30 +1000,16 @@
       : programa.u;
 
     if (etapaFallback === 1) {
-      console.warn(`⚠️ [Fallback 1/4 - Cache] Tentando recarregar com parâmetro anti-cache...`);
+      console.warn(`⚠️ [Fallback 1/3 - Cache] Tentando recarregar com parâmetro anti-cache...`);
       player.src = `${urlOriginal}?retry=${Date.now()}`;
     } else if (etapaFallback === 2) {
-      console.warn(`⚠️ [Fallback 2/4 - Espelho] Tentando servidor espelho (ia801501)...`);
+      console.warn(`⚠️ [Fallback 2/3 - Espelho] Tentando servidor espelho (ia801501)...`);
       player.src = urlOriginal.replace("archive.org/download/", "ia801501.us.archive.org/items/");
     } else if (etapaFallback === 3) {
-      console.warn(`⚠️ [Fallback 3/4 - Proxy] Tentando via proxy CORS (AllOrigins)...`);
+      console.warn(`⚠️ [Fallback 3/3 - Proxy] Tentando via proxy CORS (AllOrigins)...`);
       player.src = `https://api.allorigins.win/raw?url=${encodeURIComponent(urlOriginal)}`;
-    } else if (etapaFallback === 4) {
-      console.warn(`⚠️ [Fallback 4/4 - Troca de Episódio] Tentando próximo episódio da lista...`);
-      if (programa.listaEpisodios && programa.listaEpisodios.length > 1) {
-        programa.epIndexAtual = (programa.epIndexAtual + 1) % programa.listaEpisodios.length;
-        programa.u = programa.listaEpisodios[programa.epIndexAtual].url;
-        etapaFallback = 0;
-        executarMidia(index, false);
-        return;
-      } else {
-        console.warn(`❌ Não há episódios alternativos na coleção.`);
-        etapaFallback = 0;
-        tratarErroOuDemora(programa);
-        return;
-      }
     } else {
-      console.error(`❌ Todos os 4 métodos falharam para "${programa.n}". Encaminhando para o comercial...`);
+      console.error(`❌ Todos os métodos falharam para "${programa.n}". Indo para o comercial para manter sincronia...`);
       etapaFallback = 0;
       tratarErroOuDemora(programa);
       return;
@@ -1031,7 +1017,7 @@
 
     timeoutCarregamento = setTimeout(() => {
       if (player.readyState === 0) {
-        console.warn(`⏳ Limite de ${STEP_TIMEOUT_MS / 1000}s atingido no Fallback ${etapaFallback}. Avançando para a próxima etapa...`);
+        console.warn(`⏳ Limite de ${STEP_TIMEOUT_MS / 1000}s atingido no Fallback ${etapaFallback}. Avançando...`);
         aplicarEstrategiaFallback(programa, index);
       }
     }, STEP_TIMEOUT_MS);
