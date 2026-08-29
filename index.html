@@ -698,24 +698,16 @@
         if (resposta && resposta.ok) {
           const dadosMeta = await resposta.json();
           if (dadosMeta.files) {
-            // SOLUÇÃO PARA ÁUDIO: Filtragem aprimorada para evitar arquivos sem som
             let arquivos = dadosMeta.files.filter(f => {
-              // Excluir thumbnails e imagens
               if (!f.name || f.name.endsWith('_thumb.mp4')) return false;
-              
-              // Priorizar arquivos com extensão .mp4
               if (!f.name.toLowerCase().endsWith('.mp4')) return false;
-              
-              // EVITAR versões muito baixas (provavelmente sem áudio)
               if (f.name.includes('512kb') || f.name.includes('_low') || f.name.includes('audio_only')) return false;
               
-              // Verificar formato do arquivo (priorizar formatos com áudio conhecido)
               const formatosComAudio = ['h.264', 'MPEG4', 'AAC', 'MP3', '512Kb MPEG4', 'MPEG-4'];
               if (f.format && !formatosComAudio.some(fmt => f.format.includes(fmt))) {
                  if (['webm', 'ogg'].some(ext => f.format.toLowerCase().includes(ext))) return false;
               }
               
-              // Filtrar por duração mínima (vídeos muito curtos são problemáticos)
               const dur = converterParaSegundos(f.length);
               if (dur > 0 && dur < 180) return false;
               
@@ -723,7 +715,6 @@
             });
 
             if (arquivos.length === 0) {
-              // Fallback mais permissivo se nada foi encontrado
               arquivos = dadosMeta.files.filter(f => 
                 f.name && 
                 f.name.toLowerCase().endsWith('.mp4') && 
@@ -857,7 +848,13 @@
     } else {
       const proximoPrograma = gradeAutomated.find(p => p.m > minutosHoje);
       if (proximoPrograma) {
-        exibirTelaIntervalo(proximoPrograma);
+        const programaAnterior = gradeAutomated.slice().reverse().find(p => p.mFim <= minutosHoje);
+        let tempoDecorrido = 0;
+        if (programaAnterior) {
+          const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
+          tempoDecorrido = segundosHoje - (programaAnterior.mFim * 60);
+        }
+        exibirTelaIntervalo(proximoPrograma, tempoDecorrido);
       } else {
         encerrarSinalMadrugada();
       }
@@ -906,16 +903,16 @@
 
     if (segundosHoje < limiteNoite) {
       if (proximoPrograma) {
-        exibirTelaIntervalo(proximoPrograma);
+        exibirTelaIntervalo(proximoPrograma, 0);
       } else {
-        exibirTelaIntervalo({ h: "23:00", m: 1380, n: "Transmissão Encerrada" });
+        exibirTelaIntervalo({ h: "23:00", m: 1380, n: "Transmissão Encerrada" }, 0);
       }
     } else {
       encerrarSinalMadrugada();
     }
   }
 
-  function exibirTelaIntervalo(proximoPrograma) {
+  function exibirTelaIntervalo(proximoPrograma, tempoDecorridoIntervalo = 0) {
     if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
     etapaFallback = 0;
     
@@ -935,8 +932,19 @@
     player.muted = false;
     player.volume = 1.0;
     
-    if (tvLigada) {
-      player.play().then(() => { player.muted = false; }).catch(() => {});
+    if (tempoDecorridoIntervalo > 0) {
+      player.addEventListener('loadedmetadata', function() {
+        if (player.duration > 0) {
+          player.currentTime = tempoDecorridoIntervalo % player.duration;
+        }
+        if (tvLigada) {
+          player.play().then(() => { player.muted = false; }).catch(() => {});
+        }
+      }, { once: true });
+    } else {
+      if (tvLigada) {
+        player.play().then(() => { player.muted = false; }).catch(() => {});
+      }
     }
 
     const checarIntervalo = setInterval(async () => {
@@ -1003,7 +1011,6 @@
     } else if (etapaFallback === 2) {
       player.src = urlOriginal.replace("archive.org/download/", "ia801501.us.archive.org/items/");
     } else if (etapaFallback === 3) {
-      // Fallback específico para tentar versão alternativa de resolução/áudio
       const urlAlternativa = urlOriginal.replace(
         /(_512|\.ia)\.mp4$/, 
         '_640.mp4'
@@ -1068,7 +1075,6 @@
       if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
       etapaFallback = 0;
 
-      // Verificação extra de áudio após carregar metadados
       setTimeout(() => {
         if (player.muted) {
           player.muted = false;
@@ -1094,13 +1100,15 @@
       player.addEventListener('loadedmetadata', function() {
         if (segundosDecorridos >= player.duration) {
           const proximoPrograma = gradeAutomated[index + 1];
+          const tempoDecorridoIntervalo = segundosDecorridos - player.duration;
+
           if (proximoPrograma) {
-            exibirTelaIntervalo(proximoPrograma);
+            exibirTelaIntervalo(proximoPrograma, tempoDecorridoIntervalo);
           } else {
             const limiteNoite = horaParaMinutos("23:00") * 60;
             const segHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
             if (segHoje < limiteNoite) {
-              exibirTelaIntervalo({ h: "23:00", m: 1380, n: "Transmissão Encerrada" });
+              exibirTelaIntervalo({ h: "23:00", m: 1380, n: "Transmissão Encerrada" }, tempoDecorridoIntervalo);
             } else {
               encerrarSinalMadrugada();
             }
@@ -1132,9 +1140,9 @@
 
     if (segundosHoje < limiteNoite) {
       if (proximoPrograma) {
-        exibirTelaIntervalo(proximoPrograma);
+        exibirTelaIntervalo(proximoPrograma, 0);
       } else {
-        exibirTelaIntervalo({ h: "23:00", m: 1380, n: "Transmissão Encerrada" });
+        exibirTelaIntervalo({ h: "23:00", m: 1380, n: "Transmissão Encerrada" }, 0);
       }
       tentarReconectarProgramaEmSegundoPlano(programa, index);
     } else {
