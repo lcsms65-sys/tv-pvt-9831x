@@ -416,6 +416,368 @@
   let tvLigada = false;
   let etapaFallback = 0;
 
+  /*
+   * ============================================================
+   * NOVO CONTROLE DE PLAYLIST / OCORRÊNCIAS / REPRISES
+   * ============================================================
+   *
+   * Como usar:
+   *
+   * 1. Ocorrência normal:
+   *
+   * {
+   *   h: "09:00",
+   *   dur: 30,
+   *   padrao: { n: "Dragon Ball", id: "DragonBallCNBR" }
+   * }
+   *
+   * 2. Reprise:
+   *
+   * {
+   *   h: "15:00",
+   *   dur: 30,
+   *   padrao: { n: "Dragon Ball", id: "DragonBallCNBR" },
+   *   repriseDe: "09:00"
+   * }
+   *
+   * A ocorrência das 15:00 usará o mesmo episódio que foi
+   * atribuído à ocorrência das 09:00 naquele mesmo dia.
+   *
+   * Não é necessário informar índice de episódio.
+   *
+   * 3. Várias ocorrências normais do mesmo programa:
+   *
+   * Elas recebem posições diferentes da playlist.
+   *
+   * 4. Uma reprise não consome uma nova posição da playlist.
+   *
+   * 5. O controle é calculado em memória a partir da data atual.
+   *    Não usamos localStorage, para não criar estado diferente
+   *    entre dispositivos nem atrapalhar testes alterando data/hora.
+   */
+
+  let travaMudancaMidia = false;
+  let ultimaChaveMudanca = "";
+  let dataGradeAtual = "";
+
+  function obterChaveData(agora = new Date()) {
+    return [
+      agora.getFullYear(),
+      String(agora.getMonth() + 1).padStart(2, '0'),
+      String(agora.getDate()).padStart(2, '0')
+    ].join('-');
+  }
+
+  function obterDiaDoAno(agora = new Date()) {
+    return Math.floor(
+      (agora - new Date(agora.getFullYear(), 0, 0)) /
+      (1000 * 60 * 60 * 24)
+    );
+  }
+
+  function obterChavePlaylist(programa) {
+    if (!programa) return "";
+    
+    const id = Array.isArray(programa.idArchive)
+      ? programa.idArchive.join("|")
+      : String(programa.idArchive || "");
+
+    return `${id}`;
+  }
+
+  function prepararControleOcorrencias() {
+    const contadores = {};
+
+    gradeAutomated.forEach((programa, index) => {
+      programa.ocorrenciaId = `${programa.h}-${index}`;
+      programa.indiceOcorrencia = index;
+
+      const chave = obterChavePlaylist(programa);
+
+      if (!contadores[chave]) {
+        contadores[chave] = 0;
+      }
+
+      programa.numeroOcorrenciaMesmoPrograma = contadores[chave];
+      contadores[chave]++;
+
+      programa.ehReprise = !!programa.repriseDe;
+      programa.epIndexAtual = -1;
+      programa.indiceInicialPlaylist = -1;
+      programa.playlistPreparada = false;
+      programa.ultimaDataPlaylist = "";
+      programa.transicoesProtegidas = 0;
+    });
+  }
+
+  function encontrarOcorrenciaAnteriorPorHorario(horario) {
+    if (!horario) return null;
+
+    const alvo = gradeAutomated.find(p => p.h === horario);
+
+    if (!alvo) return null;
+
+    return alvo;
+  }
+
+  function obterOcorrenciaFonteDaReprise(programa) {
+    if (!programa || !programa.repriseDe) return null;
+
+    /*
+     * A reprise procura a ocorrência do horário indicado.
+     * Para evitar apontar para ela própria ou para uma ocorrência
+     * posterior, somente aceitamos uma ocorrência com horário
+     * anterior ao horário da reprise.
+     */
+    const horarioReprise = horaParaMinutos(programa.h);
+
+    const candidatas = gradeAutomated.filter(p => {
+      if (p === programa) return false;
+      if (p.h !== programa.repriseDe) return false;
+      return horaParaMinutos(p.h) < horarioReprise;
+    });
+
+    if (candidatas.length > 0) {
+      return candidatas[candidatas.length - 1];
+    }
+
+    /*
+     * Também permitimos procurar diretamente pelo horário quando
+     * não houver ambiguidade.
+     */
+    const direta = encontrarOcorrenciaAnteriorPorHorario(programa.repriseDe);
+
+    if (direta && direta !== programa) {
+      return direta;
+    }
+
+    return null;
+  }
+
+  function calcularIndiceInicialOcorrencia(programa, quantidadeEpisodios) {
+    if (!programa || quantidadeEpisodios <= 0) return 0;
+
+    const diaDoAno = obterDiaDoAno();
+
+    /*
+     * REPRISE:
+     * Nunca cria uma nova posição. Usa a mesma posição da
+     * ocorrência fonte.
+     */
+    if (programa.repriseDe) {
+      const fonte = obterOcorrenciaFonteDaReprise(programa);
+
+      if (fonte && typeof fonte.epIndexAtual === 'number' && fonte.epIndexAtual >= 0) {
+        return fonte.epIndexAtual % quantidadeEpisodios;
+      }
+
+      /*
+       * Se a fonte ainda não tiver sido carregada, calculamos
+       * deterministicamente a posição que ela teria.
+       */
+      if (fonte) {
+        return calcularIndiceInicialOcorrencia(
+          fonte,
+          quantidadeEpisodios
+        );
+      }
+    }
+
+    /*
+     * OCORRÊNCIA NORMAL:
+     *
+     * A primeira ocorrência usa a posição determinada pela data.
+     * As ocorrências seguintes do mesmo programa avançam a playlist.
+     *
+     * Isso permite:
+     *
+     * 09:00 -> episódio X
+     * 12:00 -> episódio X+1
+     * 15:00 -> episódio X+2
+     *
+     * sem precisar digitar números de episódios.
+     */
+    return (
+      diaDoAno +
+      programa.numeroOcorrenciaMesmoPrograma
+    ) % quantidadeEpisodios;
+  }
+
+  function marcarEpisodioDaOcorrencia(programa, indice) {
+    if (!programa) return;
+
+    programa.epIndexAtual = indice;
+    programa.indiceInicialPlaylist = indice;
+    programa.playlistPreparada = true;
+    programa.ultimaDataPlaylist = obterChaveData();
+  }
+
+  function garantirEpisodioDaOcorrencia(programa) {
+    if (!programa || !programa.listaEpisodios || !programa.listaEpisodios.length) {
+      return false;
+    }
+
+    const hoje = obterChaveData();
+
+    /*
+     * Se já foi calculado nesta mesma data, não reinicia a playlist.
+     * Essa é a trava importante para evitar que uma nova chamada
+     * de inicialização faça a playlist voltar para o início.
+     */
+    if (
+      programa.playlistPreparada &&
+      programa.ultimaDataPlaylist === hoje &&
+      programa.epIndexAtual >= 0
+    ) {
+      return true;
+    }
+
+    const indice = calcularIndiceInicialOcorrencia(
+      programa,
+      programa.listaEpisodios.length
+    );
+
+    marcarEpisodioDaOcorrencia(programa, indice);
+
+    return true;
+  }
+
+  function obterEpisodioReprise(programa) {
+    if (!programa || !programa.repriseDe) return null;
+
+    const fonte = obterOcorrenciaFonteDaReprise(programa);
+
+    if (!fonte) return null;
+
+    /*
+     * Se a fonte já tiver sido preparada, usamos exatamente o
+     * episódio dela.
+     */
+    if (
+      fonte.playlistPreparada &&
+      fonte.epIndexAtual >= 0 &&
+      fonte.listaEpisodios &&
+      fonte.listaEpisodios.length
+    ) {
+      const indice = fonte.epIndexAtual % programa.listaEpisodios.length;
+      return indice;
+    }
+
+    /*
+     * Se a fonte ainda não estiver carregada, o cálculo é
+     * determinístico e produz a mesma posição que ela receberia.
+     */
+    const indice = calcularIndiceInicialOcorrencia(
+      fonte,
+      programa.listaEpisodios.length
+    );
+
+    return indice;
+  }
+
+  function prepararEpisodioDaOcorrencia(programa) {
+    if (!programa || !programa.listaEpisodios || !programa.listaEpisodios.length) {
+      return false;
+    }
+
+    const hoje = obterChaveData();
+
+    if (
+      programa.playlistPreparada &&
+      programa.ultimaDataPlaylist === hoje &&
+      programa.epIndexAtual >= 0
+    ) {
+      programa.u = programa.listaEpisodios[programa.epIndexAtual].url;
+      return true;
+    }
+
+    if (programa.repriseDe) {
+      const indiceReprise = obterEpisodioReprise(programa);
+
+      if (
+        typeof indiceReprise === 'number' &&
+        indiceReprise >= 0
+      ) {
+        marcarEpisodioDaOcorrencia(programa, indiceReprise);
+        programa.u = programa.listaEpisodios[indiceReprise].url;
+        return true;
+      }
+    }
+
+    garantirEpisodioDaOcorrencia(programa);
+
+    if (
+      programa.epIndexAtual >= 0 &&
+      programa.listaEpisodios[programa.epIndexAtual]
+    ) {
+      programa.u = programa.listaEpisodios[programa.epIndexAtual].url;
+      return true;
+    }
+
+    return false;
+  }
+
+  function mudarParaEpisodioSeguinte(programa, indice) {
+    if (!programa || !programa.listaEpisodios || !programa.listaEpisodios.length) {
+      return false;
+    }
+
+    const agora = new Date();
+
+    /*
+     * Nunca permitir que uma reprise seja transformada em uma
+     * nova sequência independente.
+     *
+     * Durante a própria ocorrência da reprise, porém, se houver
+     * espaço dentro do bloco para outro episódio, continuamos
+     * normalmente a partir do episódio reprisado.
+     */
+    let novoIndice;
+
+    if (programa.epIndexAtual < 0) {
+      novoIndice = 0;
+    } else {
+      novoIndice =
+        (programa.epIndexAtual + 1) %
+        programa.listaEpisodios.length;
+    }
+
+    programa.epIndexAtual = novoIndice;
+    programa.u = programa.listaEpisodios[novoIndice].url;
+
+    programa.ultimaDataPlaylist = obterChaveData(agora);
+    programa.playlistPreparada = true;
+    programa.transicoesProtegidas++;
+
+    return true;
+  }
+
+  function podeMudarMidia(chave) {
+    const agora = Date.now();
+
+    if (
+      travaMudancaMidia &&
+      ultimaChaveMudanca === chave
+    ) {
+      return false;
+    }
+
+    travaMudancaMidia = true;
+    ultimaChaveMudanca = chave;
+
+    setTimeout(() => {
+      travaMudancaMidia = false;
+    }, 1000);
+
+    return true;
+  }
+
+  /*
+   * ============================================================
+   * FIM DO NOVO CONTROLE
+   * ============================================================
+   */
+
   function atualizarRelogio() {
     const agora = new Date();
     const h = String(agora.getHours()).padStart(2, '0');
@@ -429,6 +791,7 @@
       inicializarGradeAutomatica();
     }
   }
+
   setInterval(atualizarRelogio, 1000);
   atualizarRelogio();
 
@@ -588,7 +951,10 @@
       padrao: { n: "Kenan & Kel", id: ["PaixaoFlix-1-Temp", "PaixaoFlix-2-Temp", "PaixaoFlix-Kenan-e-Kel-3oTemp", "PaixaoFlix-Kenan-e-Kel-4oTemp"] },
       exceto: { sab: { n: "Projeto Zeta", id: "projeto-zeta-dublado-pt-br" } }
     },
-    { h: "21:00", dur: 30, padrao: { n: "Futurama", id: "fut01" },
+    {
+      h: "21:00",
+      dur: 30,
+      padrao: { n: "Futurama", id: "fut01" },
       exceto: { sab: { n: "Um Maluco no Pedaço", id: "um-maluco-no-pedaco-6x-18" } }
     },
     {
@@ -611,14 +977,23 @@
   function converterParaSegundos(val) {
     if (!val) return 0;
     if (typeof val === 'number') return val;
+
     if (typeof val === 'string') {
       if (val.includes(':')) {
         const partes = val.split(':').map(Number);
-        if (partes.length === 3) return partes[0] * 3600 + partes[1] * 60 + partes[2];
-        if (partes.length === 2) return partes[0] * 60 + partes[1];
+
+        if (partes.length === 3) {
+          return partes[0] * 3600 + partes[1] * 60 + partes[2];
+        }
+
+        if (partes.length === 2) {
+          return partes[0] * 60 + partes[1];
+        }
       }
+
       return parseFloat(val) || 0;
     }
+
     return 0;
   }
 
@@ -636,7 +1011,10 @@
 
   function toggleGrade() {
     const box = document.getElementById('grade-box-container');
-    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    box.style.display =
+      box.style.display === 'none'
+        ? 'block'
+        : 'none';
   }
 
   function atualizarListaGrade() {
@@ -645,7 +1023,10 @@
 
     container.innerHTML = gradeAutomated.map((item, i) => `
       <div class="grade-item ${i === indiceAtual ? 'ativo' : ''}">
-        <span><b>${item.h}</b> - ${item.n}</span>
+        <span>
+          <b>${item.h}</b> - ${item.n}
+          ${item.repriseDe ? ' ↩️' : ''}
+        </span>
         ${i === indiceAtual ? '<span>🔴 NO AR</span>' : ''}
       </div>
     `).join('');
@@ -657,10 +1038,16 @@
     const container = document.getElementById('a-seguir-lista');
     if (!container) return;
 
-    const proximos = gradeAutomated.slice(indiceAtual + 1, indiceAtual + 5);
+    const proximos = gradeAutomated.slice(
+      indiceAtual + 1,
+      indiceAtual + 5
+    );
     
     if (proximos.length === 0) {
-      container.innerHTML = `<div class="a-seguir-item"><span>Transmissão encerrada por hoje.</span></div>`;
+      container.innerHTML =
+        `<div class="a-seguir-item">
+          <span>Transmissão encerrada por hoje.</span>
+        </div>`;
       return;
     }
 
@@ -668,116 +1055,250 @@
       <div class="a-seguir-item">
         <span class="a-seguir-time">${p.h}</span>
         <span class="badge-classif">L</span>
-        <span class="a-seguir-name">${p.n}</span>
+        <span class="a-seguir-name">
+          ${p.n}${p.repriseDe ? ' ↩️' : ''}
+        </span>
       </div>
     `).join('');
   }
 
   async function carregarVideosArchive(idAlvo) {
-    const colecoes = Array.isArray(idAlvo) ? idAlvo : [idAlvo];
+    const colecoes =
+      Array.isArray(idAlvo)
+        ? idAlvo
+        : [idAlvo];
     
     const requisicoes = colecoes.map(async (id) => {
       const maxTentativas = 3;
       let resposta = null;
 
-      for (let tentativa = 1; tentativa <= maxTentativas; tentativa++) {
+      for (
+        let tentativa = 1;
+        tentativa <= maxTentativas;
+        tentativa++
+      ) {
         try {
-          let urlAPI = `https://archive.org/metadata/${id}`;
+          let urlAPI =
+            `https://archive.org/metadata/${id}`;
+
           if (tentativa === maxTentativas) {
-            urlAPI = `https://api.allorigins.win/raw?url=${encodeURIComponent(urlAPI)}`;
+            urlAPI =
+              `https://api.allorigins.win/raw?url=${encodeURIComponent(urlAPI)}`;
           }
 
           resposta = await fetch(urlAPI);
+
           if (resposta.ok) break;
+
         } catch (e) {
           if (tentativa < maxTentativas) {
-            await new Promise(r => setTimeout(r, 1000));
+            await new Promise(r =>
+              setTimeout(r, 1000)
+            );
           }
         }
       }
 
       try {
         if (resposta && resposta.ok) {
-          const dadosMeta = await resposta.json();
+          const dadosMeta =
+            await resposta.json();
+
           if (dadosMeta.files) {
-            let arquivos = dadosMeta.files.filter(f => {
-              if (!f.name || f.name.endsWith('_thumb.mp4')) return false;
-              if (!f.name.toLowerCase().endsWith('.mp4')) return false;
-              if (f.name.includes('512kb') || f.name.includes('_low') || f.name.includes('audio_only')) return false;
+
+            let arquivos =
+              dadosMeta.files.filter(f => {
+
+                if (!f.name ||
+                    f.name.endsWith('_thumb.mp4')) {
+                  return false;
+                }
+
+                if (!f.name.toLowerCase().endsWith('.mp4')) {
+                  return false;
+                }
+
+                if (
+                  f.name.includes('512kb') ||
+                  f.name.includes('_low') ||
+                  f.name.includes('audio_only')
+                ) {
+                  return false;
+                }
+                
+                const formatosComAudio = [
+                  'h.264',
+                  'MPEG4',
+                  'AAC',
+                  'MP3',
+                  '512Kb MPEG4',
+                  'MPEG-4'
+                ];
+
+                if (
+                  f.format &&
+                  !formatosComAudio.some(
+                    fmt => f.format.includes(fmt)
+                  )
+                ) {
+                  if (
+                    ['webm', 'ogg'].some(
+                      ext =>
+                        f.format
+                          .toLowerCase()
+                          .includes(ext)
+                    )
+                  ) {
+                    return false;
+                  }
+                }
+                
+                const dur =
+                  converterParaSegundos(f.length);
+
+                if (dur > 0 && dur < 180) {
+                  return false;
+                }
               
-              const formatosComAudio = ['h.264', 'MPEG4', 'AAC', 'MP3', '512Kb MPEG4', 'MPEG-4'];
-              if (f.format && !formatosComAudio.some(fmt => f.format.includes(fmt))) {
-                 if (['webm', 'ogg'].some(ext => f.format.toLowerCase().includes(ext))) return false;
-              }
-              
-              const dur = converterParaSegundos(f.length);
-              if (dur > 0 && dur < 180) return false;
-              
-              return true;
-            });
+                return true;
+              });
 
             if (arquivos.length === 0) {
-              arquivos = dadosMeta.files.filter(f => 
-                f.name && 
-                f.name.toLowerCase().endsWith('.mp4') && 
-                !f.name.endsWith('_thumb.mp4')
-              );
+              arquivos =
+                dadosMeta.files.filter(f =>
+                  f.name &&
+                  f.name
+                    .toLowerCase()
+                    .endsWith('.mp4') &&
+                  !f.name.endsWith('_thumb.mp4')
+                );
             }
             
-            let eps = arquivos
-              .filter(f => {
-                const dur = converterParaSegundos(f.length);
-                if (dur > 0 && dur < 240) return false;
-                if (id === "YuYuHakushoDublado" && dur > 2700) return false;
-                if (id === "a-grande-familia-dvd" && dur < 1500) return false;
-                return true;
-              })
-              .sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+            let eps =
+              arquivos
+                .filter(f => {
+                  const dur =
+                    converterParaSegundos(f.length);
 
-            if (id === "naruto-shippuuden-021-720p") {
+                  if (dur > 0 && dur < 240) {
+                    return false;
+                  }
+
+                  if (
+                    id === "YuYuHakushoDublado" &&
+                    dur > 2700
+                  ) {
+                    return false;
+                  }
+
+                  if (
+                    id === "a-grande-familia-dvd" &&
+                    dur < 1500
+                  ) {
+                    return false;
+                  }
+
+                  return true;
+                })
+                .sort((a, b) =>
+                  a.name.localeCompare(
+                    b.name,
+                    undefined,
+                    {
+                      numeric: true,
+                      sensitivity: 'base'
+                    }
+                  )
+                );
+
+            if (
+              id === "naruto-shippuuden-021-720p"
+            ) {
               eps = eps.slice(0, 79);
             }
 
             return eps.map(f => ({
-              titulo: f.title || f.name.replace(/(\.ia)?\.mp4$/i, ''),
-              url: `https://archive.org/download/${id}/${encodeURIComponent(f.name)}`,
-              duracao: converterParaSegundos(f.length)
+              titulo:
+                f.title ||
+                f.name.replace(
+                  /(\.ia)?\.mp4$/i,
+                  ''
+                ),
+              url:
+                `https://archive.org/download/${id}/${encodeURIComponent(f.name)}`,
+              duracao:
+                converterParaSegundos(f.length)
             }));
           }
         }
+
         return [];
+
       } catch (erro) {
         return [];
       }
     });
 
-    const resultados = await Promise.all(requisicoes);
+    const resultados =
+      await Promise.all(requisicoes);
+
     return resultados.flat();
   }
 
   function getSlotParaDia(slot, siglaDia) {
-    if (slot.exceto && slot.exceto[siglaDia]) return slot.exceto[siglaDia];
+    if (
+      slot.exceto &&
+      Object.prototype.hasOwnProperty.call(
+        slot.exceto,
+        siglaDia
+      )
+    ) {
+      return slot.exceto[siglaDia];
+    }
+
     return slot.padrao;
   }
 
   function getDuracaoParaDia(slot, siglaDia) {
-    if (typeof slot.dur === 'number') return slot.dur;
-    if (slot.dur[siglaDia]) return slot.dur[siglaDia];
+    if (typeof slot.dur === 'number') {
+      return slot.dur;
+    }
+
+    if (slot.dur[siglaDia]) {
+      return slot.dur[siglaDia];
+    }
+
     return slot.dur.padrao;
   }
 
   async function inicializarGradeAutomatica() {
     gradeAutomated = [];
+
     const hoje = new Date();
-    const diaDaSemana = DIAS_SEMANA[hoje.getDay()];
+    const diaDaSemana =
+      DIAS_SEMANA[hoje.getDay()];
 
     GRADE_UNIFICADA.forEach((slot) => {
-      const progInfo = getSlotParaDia(slot, diaDaSemana);
+
+      const progInfo =
+        getSlotParaDia(
+          slot,
+          diaDaSemana
+        );
+
       if (!progInfo) return;
 
-      const mInicio = horaParaMinutos(slot.h);
-      const duracao = getDuracaoParaDia(slot, diaDaSemana);
-      const mFim = mInicio + duracao;
+      const mInicio =
+        horaParaMinutos(slot.h);
+
+      const duracao =
+        getDuracaoParaDia(
+          slot,
+          diaDaSemana
+        );
+
+      const mFim =
+        mInicio + duracao;
 
       gradeAutomated.push({
         h: slot.h,
@@ -787,16 +1308,47 @@
         u: URL_VIDEO_INTERVALO,
         idArchive: progInfo.id,
         listaEpisodios: [],
-        epIndexAtual: 0
+        epIndexAtual: -1,
+
+        /*
+         * NOVO:
+         * Se existir, essa ocorrência é uma reprise.
+         *
+         * Exemplo:
+         * repriseDe: "09:00"
+         */
+        repriseDe: slot.repriseDe || null,
+
+        /*
+         * Controle interno.
+         */
+        ocorrenciaId: "",
+        numeroOcorrenciaMesmoPrograma: 0,
+        indiceInicialPlaylist: -1,
+        playlistPreparada: false,
+        ultimaDataPlaylist: "",
+        ehReprise: !!slot.repriseDe,
+        transicoesProtegidas: 0
       });
     });
 
-    gradeAutomated.sort((a, b) => a.m - b.m);
+    gradeAutomated.sort(
+      (a, b) => a.m - b.m
+    );
+
+    prepararControleOcorrencias();
+
+    dataGradeAtual =
+      obterChaveData(hoje);
+
     atualizarListaGrade();
 
-    const player = document.getElementById('player');
+    const player =
+      document.getElementById('player');
+
     if (player) {
       player.onended = function() {
+
         if (!player.loop) {
           tocarProximoEpisodioSemCorte();
         }
@@ -808,11 +1360,28 @@
 
   function encerrarSinalMadrugada() {
     limparTimerReconexao();
-    document.getElementById('current-time').innerText = "--:--";
-    document.getElementById('current').innerText = "Transmissão Encerrada";
-    document.getElementById('a-seguir-lista').innerHTML = `<div class="a-seguir-item"><span class="a-seguir-time">07:00</span><span class="a-seguir-name">Coragem, o Cão Covarde</span></div>`;
+
+    document.getElementById(
+      'current-time'
+    ).innerText = "--:--";
+
+    document.getElementById(
+      'current'
+    ).innerText = "Transmissão Encerrada";
+
+    document.getElementById(
+      'a-seguir-lista'
+    ).innerHTML =
+      `<div class="a-seguir-item">
+        <span class="a-seguir-time">07:00</span>
+        <span class="a-seguir-name">
+          Coragem, o Cão Covarde
+        </span>
+      </div>`;
     
-    const player = document.getElementById('player');
+    const player =
+      document.getElementById('player');
+
     if (player) {
       player.loop = false;
       player.pause();
@@ -823,40 +1392,107 @@
 
   async function iniciarTransmissaoInicial() {
     const agora = new Date();
-    const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
 
-    if (minutosHoje >= horaParaMinutos("23:00") || minutosHoje < horaParaMinutos("07:00")) {
+    const minutosHoje =
+      agora.getHours() * 60 +
+      agora.getMinutes();
+
+    if (
+      minutosHoje >= horaParaMinutos("23:00") ||
+      minutosHoje < horaParaMinutos("07:00")
+    ) {
       encerrarSinalMadrugada();
       return;
     }
 
-    indiceAtual = gradeAutomated.findIndex(p => minutosHoje >= p.m && minutosHoje < p.mFim);
+    indiceAtual =
+      gradeAutomated.findIndex(
+        p =>
+          minutosHoje >= p.m &&
+          minutosHoje < p.mFim
+      );
 
     if (indiceAtual !== -1) {
-      const programa = gradeAutomated[indiceAtual];
-      document.getElementById('current-time').innerText = programa.h;
-      document.getElementById('current').innerText = programa.n;
+
+      const programa =
+        gradeAutomated[indiceAtual];
+
+      document.getElementById(
+        'current-time'
+      ).innerText = programa.h;
+
+      document.getElementById(
+        'current'
+      ).innerText = programa.n;
+
       atualizarListaGrade();
 
-      const episodios = await carregarVideosArchive(programa.idArchive);
+      const episodios =
+        await carregarVideosArchive(
+          programa.idArchive
+        );
+
       if (episodios.length > 0) {
-        const diaDoAno = Math.floor((agora - new Date(agora.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
-        programa.listaEpisodios = episodios;
-        programa.epIndexAtual = diaDoAno % episodios.length;
-        programa.u = episodios[programa.epIndexAtual].url;
+
+        programa.listaEpisodios =
+          episodios;
+
+        /*
+         * NOVO:
+         * A seleção agora é feita pela ocorrência.
+         *
+         * Isso permite:
+         * - mesma atração várias vezes no dia;
+         * - episódios diferentes em cada ocorrência;
+         * - reprise apontando para outra ocorrência.
+         */
+        prepararEpisodioDaOcorrencia(
+          programa
+        );
       }
 
-      executarMidia(indiceAtual, true);
+      executarMidia(
+        indiceAtual,
+        true
+      );
+
     } else {
-      const proximoPrograma = gradeAutomated.find(p => p.m > minutosHoje);
+
+      const proximoPrograma =
+        gradeAutomated.find(
+          p => p.m > minutosHoje
+        );
+
       if (proximoPrograma) {
-        const programaAnterior = gradeAutomated.slice().reverse().find(p => p.mFim <= minutosHoje);
+
+        const programaAnterior =
+          gradeAutomated
+            .slice()
+            .reverse()
+            .find(
+              p =>
+                p.mFim <= minutosHoje
+            );
+
         let tempoDecorrido = 0;
+
         if (programaAnterior) {
-          const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
-          tempoDecorrido = segundosHoje - (programaAnterior.mFim * 60);
+
+          const segundosHoje =
+            agora.getHours() * 3600 +
+            agora.getMinutes() * 60 +
+            agora.getSeconds();
+
+          tempoDecorrido =
+            segundosHoje -
+            (programaAnterior.mFim * 60);
         }
-        exibirTelaIntervalo(proximoPrograma, tempoDecorrido);
+
+        exibirTelaIntervalo(
+          proximoPrograma,
+          tempoDecorrido
+        );
+
       } else {
         encerrarSinalMadrugada();
       }
@@ -865,223 +1501,588 @@
 
   function tocarProximoEpisodioSemCorte() {
     const agora = new Date();
-    const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
-    const limiteNoite = horaParaMinutos("23:00") * 60;
-    const programaAtual = gradeAutomated[indiceAtual];
 
-    if (programaAtual && segundosHoje < (programaAtual.mFim * 60)) {
-      const segundosRestantesNoBloco = (programaAtual.mFim * 60) - segundosHoje;
+    const segundosHoje =
+      agora.getHours() * 3600 +
+      agora.getMinutes() * 60 +
+      agora.getSeconds();
 
-      if (programaAtual.listaEpisodios && programaAtual.listaEpisodios.length > 1) {
+    const limiteNoite =
+      horaParaMinutos("23:00") * 60;
+
+    const programaAtual =
+      gradeAutomated[indiceAtual];
+
+    if (
+      programaAtual &&
+      segundosHoje <
+      (programaAtual.mFim * 60)
+    ) {
+
+      const segundosRestantesNoBloco =
+        (programaAtual.mFim * 60) -
+        segundosHoje;
+
+      if (
+        programaAtual.listaEpisodios &&
+        programaAtual.listaEpisodios.length > 1
+      ) {
+
         let epEncontradoIndex = -1;
-        const proximoIndexPadrao = (programaAtual.epIndexAtual + 1) % programaAtual.listaEpisodios.length;
-        const proximoEpPadrao = programaAtual.listaEpisodios[proximoIndexPadrao];
-        const duracaoPadrao = proximoEpPadrao.duracao > 0 ? proximoEpPadrao.duracao : 420;
 
-        if (duracaoPadrao <= segundosRestantesNoBloco) {
-          epEncontradoIndex = proximoIndexPadrao;
+        const proximoIndexPadrao =
+          (
+            programaAtual.epIndexAtual + 1
+          ) %
+          programaAtual.listaEpisodios.length;
+
+        const proximoEpPadrao =
+          programaAtual.listaEpisodios[
+            proximoIndexPadrao
+          ];
+
+        const duracaoPadrao =
+          proximoEpPadrao.duracao > 0
+            ? proximoEpPadrao.duracao
+            : 420;
+
+        if (
+          duracaoPadrao <=
+          segundosRestantesNoBloco
+        ) {
+          epEncontradoIndex =
+            proximoIndexPadrao;
+
         } else {
-          for (let i = 0; i < programaAtual.listaEpisodios.length; i++) {
-            const testEp = programaAtual.listaEpisodios[i];
-            const duracaoTest = testEp.duracao > 0 ? testEp.duracao : 420;
-            if (duracaoTest <= segundosRestantesNoBloco) {
+
+          for (
+            let i = 0;
+            i <
+            programaAtual.listaEpisodios.length;
+            i++
+          ) {
+
+            const testEp =
+              programaAtual.listaEpisodios[i];
+
+            const duracaoTest =
+              testEp.duracao > 0
+                ? testEp.duracao
+                : 420;
+
+            if (
+              duracaoTest <=
+              segundosRestantesNoBloco
+            ) {
               epEncontradoIndex = i;
               break;
             }
           }
         }
 
-        if (epEncontradoIndex !== -1) {
-          programaAtual.epIndexAtual = epEncontradoIndex;
-          programaAtual.u = programaAtual.listaEpisodios[epEncontradoIndex].url;
-          executarMidia(indiceAtual, false);
+        if (
+          epEncontradoIndex !== -1
+        ) {
+
+          const chave =
+            `${programaAtual.ocorrenciaId}:ep:${epEncontradoIndex}`;
+
+          if (!podeMudarMidia(chave)) {
+            return;
+          }
+
+          programaAtual.epIndexAtual =
+            epEncontradoIndex;
+
+          programaAtual.u =
+            programaAtual
+              .listaEpisodios[
+                epEncontradoIndex
+              ].url;
+
+          programaAtual.playlistPreparada = true;
+          programaAtual.ultimaDataPlaylist =
+            obterChaveData(agora);
+
+          programaAtual.transicoesProtegidas++;
+
+          executarMidia(
+            indiceAtual,
+            false
+          );
+
           return;
         }
       }
     }
 
-    const proximoIndice = indiceAtual + 1;
-    const proximoPrograma = gradeAutomated[proximoIndice];
+    const proximoIndice =
+      indiceAtual + 1;
+
+    const proximoPrograma =
+      gradeAutomated[proximoIndice];
 
     if (segundosHoje < limiteNoite) {
+
       if (proximoPrograma) {
-        exibirTelaIntervalo(proximoPrograma, 0);
+
+        exibirTelaIntervalo(
+          proximoPrograma,
+          0
+        );
+
       } else {
-        exibirTelaIntervalo({ h: "23:00", m: 1380, n: "Transmissão Encerrada" }, 0);
+
+        exibirTelaIntervalo(
+          {
+            h: "23:00",
+            m: 1380,
+            n: "Transmissão Encerrada"
+          },
+          0
+        );
       }
+
     } else {
       encerrarSinalMadrugada();
     }
   }
 
-  function exibirTelaIntervalo(proximoPrograma, tempoDecorridoIntervalo = 0) {
-    if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+  function exibirTelaIntervalo(
+    proximoPrograma,
+    tempoDecorridoIntervalo = 0
+  ) {
+
+    if (timeoutCarregamento) {
+      clearTimeout(
+        timeoutCarregamento
+      );
+    }
+
     etapaFallback = 0;
     
-    document.getElementById('current-time').innerText = "--:--";
-    document.getElementById('current').innerText = "Intervalo Comercial";
+    document.getElementById(
+      'current-time'
+    ).innerText = "--:--";
+
+    document.getElementById(
+      'current'
+    ).innerText =
+      "Intervalo Comercial";
     
-    const player = document.getElementById('player');
+    const player =
+      document.getElementById('player');
     
     player.onerror = function() {
       player.onerror = null;
     };
 
     player.loop = true;
-    player.removeAttribute('crossorigin');
-    player.src = URL_VIDEO_INTERVALO;
+    player.removeAttribute(
+      'crossorigin'
+    );
+
+    player.src =
+      URL_VIDEO_INTERVALO;
     
     player.muted = false;
     player.volume = 1.0;
     
     if (tempoDecorridoIntervalo > 0) {
-      player.addEventListener('loadedmetadata', function() {
-        if (player.duration > 0) {
-          player.currentTime = tempoDecorridoIntervalo % player.duration;
-        }
-        if (tvLigada) {
-          player.play().then(() => { player.muted = false; }).catch(() => {});
-        }
-      }, { once: true });
+
+      player.addEventListener(
+        'loadedmetadata',
+        function() {
+
+          if (player.duration > 0) {
+            player.currentTime =
+              tempoDecorridoIntervalo %
+              player.duration;
+          }
+
+          if (tvLigada) {
+
+            player.play()
+              .then(() => {
+                player.muted = false;
+              })
+              .catch(() => {});
+          }
+
+        },
+        { once: true }
+      );
+
     } else {
+
       if (tvLigada) {
-        player.play().then(() => { player.muted = false; }).catch(() => {});
+
+        player.play()
+          .then(() => {
+            player.muted = false;
+          })
+          .catch(() => {});
       }
     }
 
-    const checarIntervalo = setInterval(async () => {
-      const agora = new Date();
-      const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
+    const checarIntervalo =
+      setInterval(
+        async () => {
 
-      if (minutosHoje >= proximoPrograma.m) {
-        clearInterval(checarIntervalo);
-        limparTimerReconexao();
-        player.loop = false;
-        indiceAtual = gradeAutomated.indexOf(proximoPrograma);
+          const agora = new Date();
 
-        if (!proximoPrograma.listaEpisodios || proximoPrograma.listaEpisodios.length === 0) {
-          const episodios = await carregarVideosArchive(proximoPrograma.idArchive);
-          if (episodios.length > 0) {
-            const diaDoAno = Math.floor((agora - new Date(agora.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
-            proximoPrograma.listaEpisodios = episodios;
-            proximoPrograma.epIndexAtual = diaDoAno % episodios.length;
-            proximoPrograma.u = episodios[proximoPrograma.epIndexAtual].url;
+          const minutosHoje =
+            agora.getHours() * 60 +
+            agora.getMinutes();
+
+          if (
+            minutosHoje >=
+            proximoPrograma.m
+          ) {
+
+            clearInterval(
+              checarIntervalo
+            );
+
+            limparTimerReconexao();
+
+            player.loop = false;
+
+            indiceAtual =
+              gradeAutomated.indexOf(
+                proximoPrograma
+              );
+
+            if (
+              !proximoPrograma.listaEpisodios ||
+              proximoPrograma.listaEpisodios.length === 0
+            ) {
+
+              const episodios =
+                await carregarVideosArchive(
+                  proximoPrograma.idArchive
+                );
+
+              if (episodios.length > 0) {
+
+                proximoPrograma.listaEpisodios =
+                  episodios;
+
+                prepararEpisodioDaOcorrencia(
+                  proximoPrograma
+                );
+              }
+
+            } else {
+              prepararEpisodioDaOcorrencia(
+                proximoPrograma
+              );
+            }
+
+            executarMidia(
+              indiceAtual,
+              false
+            );
           }
-        }
 
-        executarMidia(indiceAtual, false);
-      }
-    }, 3000);
+        },
+        3000
+      );
   }
 
-  function tentarReconectarProgramaEmSegundoPlano(programa, index) {
+  function tentarReconectarProgramaEmSegundoPlano(
+    programa,
+    index
+  ) {
+
     limparTimerReconexao();
 
-    timerReconexao = setInterval(async () => {
-      const agora = new Date();
-      const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
+    timerReconexao =
+      setInterval(
+        async () => {
 
-      if (minutosHoje >= programa.mFim) {
-        limparTimerReconexao();
-        return;
-      }
+          const agora = new Date();
 
-      const idAlvo = programa.idArchive;
-      const novosEpisodios = await carregarVideosArchive(idAlvo);
+          const minutosHoje =
+            agora.getHours() * 60 +
+            agora.getMinutes();
 
-      if (novosEpisodios && novosEpisodios.length > 0) {
-        limparTimerReconexao();
-        programa.listaEpisodios = novosEpisodios;
-        programa.epIndexAtual = Math.floor((agora - new Date(agora.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24)) % novosEpisodios.length;
-        programa.u = novosEpisodios[programa.epIndexAtual].url;
-        executarMidia(index, true);
-      }
-    }, 30000);
+          if (
+            minutosHoje >=
+            programa.mFim
+          ) {
+            limparTimerReconexao();
+            return;
+          }
+
+          const idAlvo =
+            programa.idArchive;
+
+          const novosEpisodios =
+            await carregarVideosArchive(
+              idAlvo
+            );
+
+          if (
+            novosEpisodios &&
+            novosEpisodios.length > 0
+          ) {
+
+            limparTimerReconexao();
+
+            programa.listaEpisodios =
+              novosEpisodios;
+
+            /*
+             * IMPORTANTE:
+             * Não fazemos simplesmente diaDoAno % length.
+             * A ocorrência continua sendo responsável pela
+             * seleção do episódio.
+             */
+            prepararEpisodioDaOcorrencia(
+              programa
+            );
+
+            executarMidia(
+              index,
+              true
+            );
+          }
+
+        },
+        30000
+      );
   }
 
-  function aplicarEstrategiaFallback(programa, index) {
-    if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+  function aplicarEstrategiaFallback(
+    programa,
+    index
+  ) {
+
+    if (timeoutCarregamento) {
+      clearTimeout(
+        timeoutCarregamento
+      );
+    }
+
     etapaFallback++;
 
-    const player = document.getElementById('player');
-    const urlOriginal = programa.listaEpisodios && programa.listaEpisodios.length > 0
-      ? programa.listaEpisodios[programa.epIndexAtual].url
-      : programa.u;
+    const player =
+      document.getElementById('player');
+
+    const urlOriginal =
+      programa.listaEpisodios &&
+      programa.listaEpisodios.length > 0
+        ? programa
+            .listaEpisodios[
+              programa.epIndexAtual >= 0
+                ? programa.epIndexAtual
+                : 0
+            ].url
+        : programa.u;
 
     if (etapaFallback === 1) {
-      player.src = `${urlOriginal}?retry=${Date.now()}`;
+
+      player.src =
+        `${urlOriginal}?retry=${Date.now()}`;
+
     } else if (etapaFallback === 2) {
-      player.src = urlOriginal.replace("archive.org/download/", "ia801501.us.archive.org/items/");
+
+      player.src =
+        urlOriginal.replace(
+          "archive.org/download/",
+          "ia801501.us.archive.org/items/"
+        );
+
     } else if (etapaFallback === 3) {
-      const urlAlternativa = urlOriginal.replace(
-        /(_512|\.ia)\.mp4$/, 
-        '_640.mp4'
-      );
-      if (urlAlternativa !== urlOriginal) {
-        console.log("Tentando versão alternativa com áudio:", urlAlternativa);
-        player.src = urlAlternativa;
+
+      const urlAlternativa =
+        urlOriginal.replace(
+          /(_512|\.ia)\.mp4$/,
+          '_640.mp4'
+        );
+
+      if (
+        urlAlternativa !==
+        urlOriginal
+      ) {
+
+        console.log(
+          "Tentando versão alternativa com áudio:",
+          urlAlternativa
+        );
+
+        player.src =
+          urlAlternativa;
+
       } else {
-        player.src = `https://api.allorigins.win/raw?url=${encodeURIComponent(urlOriginal)}`;
+
+        player.src =
+          `https://api.allorigins.win/raw?url=${encodeURIComponent(urlOriginal)}`;
       }
+
     } else {
+
       etapaFallback = 0;
-      tratarErroOuDemora(programa);
+
+      tratarErroOuDemora(
+        programa
+      );
+
       return;
     }
 
-    timeoutCarregamento = setTimeout(() => {
-      if (player.readyState === 0) {
-        aplicarEstrategiaFallback(programa, index);
-      }
-    }, STEP_TIMEOUT_MS);
+    timeoutCarregamento =
+      setTimeout(
+        () => {
+
+          if (player.readyState === 0) {
+            aplicarEstrategiaFallback(
+              programa,
+              index
+            );
+          }
+
+        },
+        STEP_TIMEOUT_MS
+      );
   }
 
-  function executarMidia(index, sincronizarSegundos) {
+  function executarMidia(
+    index,
+    sincronizarSegundos
+  ) {
+
     limparTimerReconexao();
-    const programa = gradeAutomated[index];
+
+    const programa =
+      gradeAutomated[index];
+
     if (!programa) return;
 
-    if (programa.listaEpisodios && programa.listaEpisodios.length > 0) {
-      programa.u = programa.listaEpisodios[programa.epIndexAtual].url;
+    /*
+     * NOVO:
+     * Sempre garante que a ocorrência tenha
+     * sua posição correta antes de tocar.
+     */
+    if (
+      programa.listaEpisodios &&
+      programa.listaEpisodios.length > 0
+    ) {
+
+      prepararEpisodioDaOcorrencia(
+        programa
+      );
+
+      if (
+        programa.epIndexAtual >= 0 &&
+        programa.listaEpisodios[
+          programa.epIndexAtual
+        ]
+      ) {
+
+        programa.u =
+          programa
+            .listaEpisodios[
+              programa.epIndexAtual
+            ].url;
+      }
     }
 
-    const player = document.getElementById('player');
-    player.loop = false;
-    player.removeAttribute('crossorigin');
+    const player =
+      document.getElementById('player');
 
-    document.getElementById('current-time').innerText = programa.h;
-    document.getElementById('current').innerText = programa.n;
+    player.loop = false;
+
+    player.removeAttribute(
+      'crossorigin'
+    );
+
+    document.getElementById(
+      'current-time'
+    ).innerText =
+      programa.h;
+
+    document.getElementById(
+      'current'
+    ).innerText =
+      programa.n;
 
     atualizarListaGrade();
 
-    if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+    if (timeoutCarregamento) {
+      clearTimeout(
+        timeoutCarregamento
+      );
+    }
 
     player.onerror = function() {
-      if (player.src && player.src.includes(URL_VIDEO_INTERVALO)) return;
-      const err = player.error;
-      const errCode = err ? err.code : 0;
 
-      if (errCode === 2 && etapaFallback < 3) {
+      if (
+        player.src &&
+        player.src.includes(
+          URL_VIDEO_INTERVALO
+        )
+      ) {
+        return;
+      }
+
+      const err =
+        player.error;
+
+      const errCode =
+        err ? err.code : 0;
+
+      if (
+        errCode === 2 &&
+        etapaFallback < 3
+      ) {
         etapaFallback = 2;
       }
-      aplicarEstrategiaFallback(programa, index);
+
+      aplicarEstrategiaFallback(
+        programa,
+        index
+      );
     };
 
-    timeoutCarregamento = setTimeout(() => {
-      if (player.readyState === 0) {
-        aplicarEstrategiaFallback(programa, index);
-      }
-    }, STEP_TIMEOUT_MS);
+    timeoutCarregamento =
+      setTimeout(
+        () => {
+
+          if (player.readyState === 0) {
+
+            aplicarEstrategiaFallback(
+              programa,
+              index
+            );
+          }
+
+        },
+        STEP_TIMEOUT_MS
+      );
 
     player.oncanplay = function() {
-      if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+
+      if (timeoutCarregamento) {
+        clearTimeout(
+          timeoutCarregamento
+        );
+      }
+
       etapaFallback = 0;
 
       setTimeout(() => {
+
         if (player.muted) {
+
           player.muted = false;
-          console.log("Desmutando player automaticamente.");
+
+          console.log(
+            "Desmutando player automaticamente."
+          );
         }
+
       }, 500);
     };
 
@@ -1093,88 +2094,242 @@
     player.volume = 1.0;
 
     if (sincronizarSegundos) {
+
       const agora = new Date();
-      const minutosHoje = agora.getHours() * 60 + agora.getMinutes();
-      const segundosHoje = agora.getSeconds();
-      const minutosDecorridos = minutosHoje - programa.m;
-      const segundosDecorridos = (minutosDecorridos * 60) + segundosHoje;
 
-      player.addEventListener('loadedmetadata', function() {
-        if (segundosDecorridos >= player.duration) {
-          const proximoPrograma = gradeAutomated[index + 1];
-          const tempoDecorridoIntervalo = segundosDecorridos - player.duration;
+      const minutosHoje =
+        agora.getHours() * 60 +
+        agora.getMinutes();
 
-          if (proximoPrograma) {
-            exibirTelaIntervalo(proximoPrograma, tempoDecorridoIntervalo);
-          } else {
-            const limiteNoite = horaParaMinutos("23:00") * 60;
-            const segHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
-            if (segHoje < limiteNoite) {
-              exibirTelaIntervalo({ h: "23:00", m: 1380, n: "Transmissão Encerrada" }, tempoDecorridoIntervalo);
+      const segundosHoje =
+        agora.getSeconds();
+
+      const minutosDecorridos =
+        minutosHoje -
+        programa.m;
+
+      const segundosDecorridos =
+        (minutosDecorridos * 60) +
+        segundosHoje;
+
+      player.addEventListener(
+        'loadedmetadata',
+        function() {
+
+          if (
+            segundosDecorridos >=
+            player.duration
+          ) {
+
+            const proximoPrograma =
+              gradeAutomated[
+                index + 1
+              ];
+
+            const tempoDecorridoIntervalo =
+              segundosDecorridos -
+              player.duration;
+
+            if (proximoPrograma) {
+
+              exibirTelaIntervalo(
+                proximoPrograma,
+                tempoDecorridoIntervalo
+              );
+
             } else {
-              encerrarSinalMadrugada();
+
+              const limiteNoite =
+                horaParaMinutos(
+                  "23:00"
+                ) * 60;
+
+              const segHoje =
+                agora.getHours() * 3600 +
+                agora.getMinutes() * 60 +
+                agora.getSeconds();
+
+              if (
+                segHoje <
+                limiteNoite
+              ) {
+
+                exibirTelaIntervalo(
+                  {
+                    h: "23:00",
+                    m: 1380,
+                    n: "Transmissão Encerrada"
+                  },
+                  tempoDecorridoIntervalo
+                );
+
+              } else {
+                encerrarSinalMadrugada();
+              }
+            }
+
+          } else if (
+            segundosDecorridos > 0
+          ) {
+
+            player.currentTime =
+              segundosDecorridos;
+
+            if (tvLigada) {
+
+              player.play()
+                .then(() => {
+                  player.muted = false;
+                })
+                .catch(() => {});
             }
           }
-        } else if (segundosDecorridos > 0) {
-          player.currentTime = segundosDecorridos;
-          if (tvLigada) {
-            player.play().then(() => { player.muted = false; }).catch(() => {});
-          }
-        }
-      }, { once: true });
+
+        },
+        { once: true }
+      );
+
     } else {
+
       if (tvLigada) {
-        player.play().then(() => { player.muted = false; }).catch(() => {});
+
+        player.play()
+          .then(() => {
+            player.muted = false;
+          })
+          .catch(() => {});
       }
     }
   }
 
-  function tratarErroOuDemora(programa) {
-    if (timeoutCarregamento) clearTimeout(timeoutCarregamento);
+  function tratarErroOuDemora(
+    programa
+  ) {
+
+    if (timeoutCarregamento) {
+      clearTimeout(
+        timeoutCarregamento
+      );
+    }
+
     etapaFallback = 0;
 
-    const index = gradeAutomated.indexOf(programa);
-    const proximoPrograma = gradeAutomated[index + 1];
-    
-    const agora = new Date();
-    const segundosHoje = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
-    const limiteNoite = horaParaMinutos("23:00") * 60;
+    const index =
+      gradeAutomated.indexOf(
+        programa
+      );
 
-    if (segundosHoje < limiteNoite) {
+    const proximoPrograma =
+      gradeAutomated[
+        index + 1
+      ];
+    
+    const agora =
+      new Date();
+
+    const segundosHoje =
+      agora.getHours() * 3600 +
+      agora.getMinutes() * 60 +
+      agora.getSeconds();
+
+    const limiteNoite =
+      horaParaMinutos(
+        "23:00"
+      ) * 60;
+
+    if (
+      segundosHoje <
+      limiteNoite
+    ) {
+
       if (proximoPrograma) {
-        exibirTelaIntervalo(proximoPrograma, 0);
+
+        exibirTelaIntervalo(
+          proximoPrograma,
+          0
+        );
+
       } else {
-        exibirTelaIntervalo({ h: "23:00", m: 1380, n: "Transmissão Encerrada" }, 0);
+
+        exibirTelaIntervalo(
+          {
+            h: "23:00",
+            m: 1380,
+            n: "Transmissão Encerrada"
+          },
+          0
+        );
       }
-      tentarReconectarProgramaEmSegundoPlano(programa, index);
+
+      tentarReconectarProgramaEmSegundoPlano(
+        programa,
+        index
+      );
+
     } else {
       encerrarSinalMadrugada();
     }
   }
 
   function ligarTelevisao() {
+
     tvLigada = true;
-    document.getElementById('tela-start').style.display = 'none';
-    const player = document.getElementById('player');
+
+    document.getElementById(
+      'tela-start'
+    ).style.display = 'none';
+
+    const player =
+      document.getElementById('player');
     
     player.muted = false;
     player.volume = 1.0;
     
-    player.play().then(() => { player.muted = false; }).catch(() => {});
+    player.play()
+      .then(() => {
+        player.muted = false;
+      })
+      .catch(() => {});
   }
 
   function toggleFullScreen() {
-    const modulo = document.getElementById('modulo-tv');
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-      if (modulo.requestFullscreen) modulo.requestFullscreen();
-      else if (modulo.webkitRequestFullscreen) modulo.webkitRequestFullscreen();
+
+    const modulo =
+      document.getElementById(
+        'modulo-tv'
+      );
+
+    if (
+      !document.fullscreenElement &&
+      !document.webkitFullscreenElement
+    ) {
+
+      if (modulo.requestFullscreen) {
+        modulo.requestFullscreen();
+
+      } else if (
+        modulo.webkitRequestFullscreen
+      ) {
+        modulo.webkitRequestFullscreen();
+      }
+
     } else {
-      if (document.exitFullscreen) document.exitFullscreen();
-      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+
+      } else if (
+        document.webkitExitFullscreen
+      ) {
+        document.webkitExitFullscreen();
+      }
     }
   }
 
-  window.addEventListener('DOMContentLoaded', inicializarGradeAutomatica);
+  window.addEventListener(
+    'DOMContentLoaded',
+    inicializarGradeAutomatica
+  );
 </script>
 </body>
 </html>
