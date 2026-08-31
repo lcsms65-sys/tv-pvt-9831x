@@ -468,11 +468,19 @@
     ].join('-');
   }
 
+  /*
+   * Usa a data do calendário local, sem calcular a duração do dia em
+   * milissegundos. Isso evita repetir ou pular a posição diária quando
+   * houver diferença de fuso ou horário de verão.
+   */
   function obterDiaDoAno(agora = new Date()) {
-    return Math.floor(
-      (agora - new Date(agora.getFullYear(), 0, 0)) /
-      (1000 * 60 * 60 * 24)
+    const inicioDoDiaUTC = Date.UTC(
+      agora.getFullYear(),
+      agora.getMonth(),
+      agora.getDate()
     );
+
+    return Math.floor(inicioDoDiaUTC / (1000 * 60 * 60 * 24));
   }
 
   function obterChavePlaylist(programa) {
@@ -483,6 +491,52 @@
       : String(programa.idArchive || "");
 
     return `${id}`;
+  }
+
+  function contarOcorrenciasNormaisAntesDaData(chavePlaylist, dataLimite) {
+    const inicio = new Date(2020, 0, 1);
+    const limite = new Date(
+      dataLimite.getFullYear(),
+      dataLimite.getMonth(),
+      dataLimite.getDate()
+    );
+    let total = 0;
+
+    for (
+      let data = new Date(inicio);
+      data < limite;
+      data.setDate(data.getDate() + 1)
+    ) {
+      const siglaDia = DIAS_SEMANA[data.getDay()];
+
+      GRADE_UNIFICADA.forEach(slot => {
+        const progInfo = getSlotParaDia(slot, siglaDia);
+
+        if (!progInfo || slot.repriseDe) return;
+
+        const chave = Array.isArray(progInfo.id)
+          ? progInfo.id.join('|')
+          : String(progInfo.id || '');
+
+        if (chave === chavePlaylist) total++;
+      });
+    }
+
+    return total;
+  }
+
+  function contarOcorrenciasNormaisAnterioresNoDia(programa) {
+    if (!programa) return 0;
+
+    const chavePlaylist = obterChavePlaylist(programa);
+
+    return gradeAutomated
+      .slice(0, programa.indiceOcorrencia)
+      .filter(outra =>
+        !outra.repriseDe &&
+        obterChavePlaylist(outra) === chavePlaylist
+      )
+      .length;
   }
 
   function prepararControleOcorrencias() {
@@ -597,9 +651,25 @@
      *
      * sem precisar digitar números de episódios.
      */
+    const chavePlaylist = obterChavePlaylist(programa);
+    const dataHoje = new Date();
+    const ocorrenciasAntes =
+      contarOcorrenciasNormaisAntesDaData(
+        chavePlaylist,
+        dataHoje
+      );
+    const ocorrenciasAnterioresNoDia =
+      contarOcorrenciasNormaisAnterioresNoDia(programa);
+
+    /*
+     * A posição agora avança somente quando existe um bloco normal
+     * daquele programa. Dias sem o programa não consomem episódio.
+     * Blocos diferentes no mesmo dia ocupam posições consecutivas.
+     * Reprises retornam antes e não consomem nova posição.
+     */
     return (
-      diaDoAno +
-      programa.numeroOcorrenciaMesmoPrograma
+      ocorrenciasAntes +
+      ocorrenciasAnterioresNoDia
     ) % quantidadeEpisodios;
   }
 
@@ -1174,6 +1244,31 @@
                 );
             }
             
+            /*
+             * .mp4 e .ia.mp4 podem ser duas cópias do mesmo episódio.
+             * Mantemos apenas uma entrada na playlist para que a cópia
+             * leve não seja contada como um episódio adicional.
+             * A versão .ia.mp4 é preservada quando estiver disponível.
+             */
+            const arquivosPorEpisodio = new Map();
+
+            arquivos.forEach(arquivo => {
+              const nome = String(arquivo.name || '');
+              const chave = nome
+                .replace(/\.ia\.mp4$/i, '.mp4')
+                .toLowerCase();
+              const anterior = arquivosPorEpisodio.get(chave);
+              const atualEhIa = /\.ia\.mp4$/i.test(nome);
+              const anteriorEhIa = anterior &&
+                /\.ia\.mp4$/i.test(String(anterior.name || ''));
+
+              if (!anterior || (atualEhIa && !anteriorEhIa)) {
+                arquivosPorEpisodio.set(chave, arquivo);
+              }
+            });
+
+            arquivos = Array.from(arquivosPorEpisodio.values());
+
             let eps =
               arquivos
                 .filter(f => {
