@@ -856,8 +856,8 @@
 
     document.getElementById('clock').innerText = `${h}:${m}`;
 
-    if (h === '07' && m === '00' && s === '00') {
-      console.log("⏰ 07:00 da manhã! Reativando sinal da transmissão...");
+    if (h === '06' && m === '00' && s === '00') {
+      console.log("⏰ 06:00 da manhã! Reativando sinal da transmissão...");
       inicializarGradeAutomatica();
     }
   }
@@ -868,6 +868,16 @@
   const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
 
   const GRADE_UNIFICADA = [
+  {
+  h: "06:00",
+  dur: 30,
+  padrao: { n: "Novo Telecurso", id: "novo-telecurso" }
+},
+{
+  h: "06:30",
+  dur: 30,
+  padrao: { n: "Novo Telecurso", id: "novo-telecurso" }
+},
   {
     h: "07:00",
     dur: 30,
@@ -1591,9 +1601,9 @@
       'a-seguir-lista'
     ).innerHTML =
       `<div class="a-seguir-item">
-        <span class="a-seguir-time">07:00</span>
+        <span class="a-seguir-time">06:00</span>
         <span class="a-seguir-name">
-          Coragem, o Cão Covarde
+          Novo Telecurso
         </span>
       </div>`;
     
@@ -1617,7 +1627,7 @@
 
     if (
       minutosHoje >= horaParaMinutos("23:00") ||
-      minutosHoje < horaParaMinutos("07:00")
+      minutosHoje < horaParaMinutos("06:00")
     ) {
       encerrarSinalMadrugada();
       return;
