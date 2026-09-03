@@ -868,178 +868,300 @@
   const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
 
   const GRADE_UNIFICADA = [
-    { h: "07:00", dur: 30, padrao: { n: "Coragem, o Cão Covarde", id: "coragemcaocovarde-backup" } },
-    { h: "07:30", dur: 30, padrao: { n: "As Aventuras de Jackie Chan", id: "as-aventuras-de-jackie-chan-Completo-paixaoflix" } },
-    { h: "08:00", dur: 30, padrao: { n: "Caverna do Dragão", id: "caverna-do-dragao-1983-480p" } },
-    {
-      h: "08:30",
-      dur: 30,
-      padrao: { n: "Três Espiãs Demais", id: "desenhos-tres-espias-demais-totally-spies-2001-2014" },
-      exceto: { dom: { n: "Martin Mystery", id: "20221114_20221114_1323" } }
-    },
-    {
-      h: "09:00",
-      dur: 30,
-      padrao: { n: "Avatar: A Lenda de Aang", id: ["PaixaoFlix-Livro-1-Agua", "PaixaoFlix-Livro-2-Terra", "PaixaoFlix-Livro-3-Fogo"] },
-      exceto: { sab: { n: "Dragon Ball Z", id: "DBZCN" }, dom: { n: "Pokémon", id: ["pokemonligaindigocartoonnetworkbr", "PKMLigaLaranjaCNBR", "PKMLigaJohtoCNBR"] } }
-    },
-    {
-      h: "09:30",
-      dur: 30,
-      padrao: { n: "X-Men: A Série Animada", id: "X-MenTheAnimatedSeriesDublado" },
-      exceto: { sab: { n: "Dragon Ball Super", id: "DragonBallSuperCartoonNetworkBR" }, dom: { n: "X-Men Evolution", id: "desenhos-x-men-evolution-20002003_202501" } }
-    },
-    {
-      h: "10:00",
-      dur: 30,
-      padrao: { n: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", id: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501" },
-      exceto: { qua: { n: "Os Vingadores", id: "ep-09_202308" }, qui: { n: "Os Vingadores: A Série", id: "os-vingadores-a-serie-dublado" }, sex: { n: "Vingadores Unidos", id: "os-vingadores-unidos-dublado" }, sab: { n: "Power Rangers Dino Trovão", id: "power-rangers-dino-trovao-episodios" }, dom: { n: "O Que Há de Novo, Scooby-Doo?", id: "o-que-ha-de-novo-scooby-doo-1-temp" } }
-    },
-    {
-      h: "10:30",
-      dur: 30,
-      padrao: { n: "Homem-Aranha: A Série Animada (1994)", id: "homem-aranhaaserieanimada" },
-      exceto: { qui: { n: "Homem-Aranha: Ação Sem Limites", id: "homem-aranha-acao-sem-limites" }, sex: { n: "Homem-Aranha: A Nova Série Animada", id: "homem-aranha-a-nova-serie-animada-dublado" }, sab: { n: "Ultimate Homem-Aranha", id: "ultimate-homem-aranha-dublado" }, dom: { n: "O Espetacular Homem-Aranha", id: "o-espetacular-homem-aranha-2008-dublado_202606" } }
-    },
-    {
-      h: "11:00",
-      dur: 30,
-      padrao: { n: "Super Choque", id: "PaixaoFlix-Super-Choque-Completo" },
-      exceto: { sab: { n: "Mickey e Donald", id: "mickey-e-donald-a-mina-de-ouro-do-pato-donald" }, dom: { n: "Dragon Ball Z Kai", id: "DBZKaiCNBR" } }
-    },
-    {
-      h: "11:30",
-      dur: { padrao: 30, sab: 35 },
-      padrao: { n: "Eu, A Patroa e as Crianças", id: "e.-p.-c-s-01-e-09-terminando-e-quebrando-720p" },
-      exceto: { sab: { n: "A Grande Família", id: "series-a-grande-familia-20012014_202503" } }
-    },
-    {
-      h: "12:00",
-      dur: 30,
-      padrao: { n: "Um Maluco no Pedaço", id: "um-maluco-no-pedaco-6x-18" },
-      exceto: { sab: { n: "Todo Mundo Odeia o Chris", id: ["PaixaoFlix-Todo-Mundo-Odeia-o-Chris-1-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-2-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-3-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-4-Temporada"] } }
-    },
-    {
-      h: "12:30",
-      dur: { padrao: 30, sab: 60 },
-      padrao: { n: "Todo Mundo Odeia o Chris", id: ["PaixaoFlix-Todo-Mundo-Odeia-o-Chris-1-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-2-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-3-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-4-Temporada"] },
-      exceto: { sab: { n: "Sai de Baixo", id: ["sai-de-baixo", "sdb-4temp"] } }
-    },
-    {
-      h: "13:00",
-      dur: 30,
-      padrao: { n: "Os Camundongos Aventureiros", id: ["desenho-animado-os-camundongos-aventureiros-1-temporada-completa", "desenho-animado-os-camundongos-aventureiros-2-temporada-completa"] },
-      exceto: { sab: null, dom: { n: "Mickey e Donald", id: "mickey-e-donald-a-mina-de-ouro-do-pato-donald" } }
-    },
-    {
-      h: "13:30",
-      dur: 30,
-      padrao: { n: "DuckTales: Os Caçadores de Aventuras", id: "duck-tales-dublado" },
-      exceto: { sab: { n: "Os Cavaleiros do Zodíaco", id: ["cavaleirosdozodiaco", "cavaleirosdozodiaco_202107", "cavaleiros.-do.-zodiaco-03-saga-doze-casas", "cavaleiros-do-zodiaco-04-saga-asgard"] }, dom: { n: "A Família Dinossauro", id: "17.-o-dia-da-geladeira_202605" } }
-    },
-    {
-      h: "14:00",
-      dur: 30,
-      padrao: { n: "Os Cavaleiros do Zodíaco", id: ["cavaleirosdozodiaco", "cavaleirosdozodiaco_202107", "cavaleiros.-do.-zodiaco-03-saga-doze-casas", "cavaleiros-do-zodiaco-04-saga-asgard"] },
-      exceto: { sab: { n: "Batman do Futuro", id: "desenhos-004-batman-do-futuro-batman-beyond-19992001" } }
-    },
-    {
-      h: "14:30",
-      dur: 30,
-      padrao: { n: "Dragon Ball (Clássico)", id: "DragonBallCNBR" },
-      exceto: { sab: { n: "Homem de Ferro: A Nova Série Animada", id: "homem-de-ferro-a-nova-serie-animada-dublado" }, dom: { n: "Dragon Ball GT", id: "DragonBallGTCNBR" } }
-    },
-    {
-      h: "15:00",
-      dur: 30,
-      padrao: { n: "Dragon Ball Super", id: "DragonBallSuperCartoonNetworkBR" },
-      exceto: { ter: { n: "Dragon Ball Daima", id: "DragonBallDaimaAdultSwimBrasil" }, qui: { n: "Dragon Ball GT", id: "DragonBallGTCNBR" }, sab: { n: "Fullmetal Alchemist", id: "fullmetal-completo-pt-br" }, dom: { n: "As Tartarugas Mutantes Ninja", id: "tartarugasninja2003" } }
-    },
-    {
-      h: "15:30",
-      dur: 30,
-      padrao: { n: "As Tartarugas Mutantes Ninja", id: "tartarugasninja2003" },
-      exceto: { sab: { n: "Naruto Clássico", id: "NarutoCNBR" }, dom: { n: "Ultimate Homem-Aranha", id: "ultimate-homem-aranha-dublado" } }
-    },
-    {
-      h: "16:00",
-      dur: 30,
-      padrao: { n: "Avatar: A Lenda de Korra", id: "desenhos-avatar-a-lenda-de-korra-20122014" },
-      exceto: { sex: { n: "Pokémon", id: ["pokemonligaindigocartoonnetworkbr", "PKMLigaLaranjaCNBR", "PKMLigaJohtoCNBR"] }, sab: { n: "Yu-Gi-Oh!", id: "2000-yu-gi-oh-s-01" } }
-    },
-    {
-      h: "16:30",
-      dur: 30,
-      padrao: { n: "Fullmetal Alchemist", id: "fullmetal-completo-pt-br" },
-      exceto: { sab: { n: "Pokémon", id: ["1997-pokemon-s-01", "PKMLigaLaranjaCNBR", "PKMLigaJohtoCNBR"] }, dom: { n: "Power Rangers Dino Trovão", id: "power-rangers-dino-trovao-episodios" } }
-    },
-    {
-      h: "17:00",
-      dur: { padrao: 30, dom: 35 },
-      padrao: { n: "A Família Dinossauro", id: "17.-o-dia-da-geladeira_202605" },
-      exceto: { sab: { n: "Pokémon Chronicles", id: "PokemonChroniclesCNBR" }, dom: { n: "A Grande Família", id: "series-a-grande-familia-20012014_202503" } }
-    },
-    {
-      h: "17:30",
-      dur: 30,
-      padrao: { n: "Superman: A Série Animada", id: ["superman-s-01-e-01-the-last-son-of-krypton-part-i", "superman-s-02-e-01-the-prometheon", "superman-s-03-e-02-knight-time", "superman-s-04-e-03-legacy-part-two"] },
-      exceto: { sab: { n: "O Batman (2004-2008)", id: "o-batman-2004-2008" }, dom: { n: "As Novas Aventuras do Batman", id: "desenhos-as-novas-aventuras-do-batman-19971999" } }
-    },
-    {
-      h: "18:00",
-      dur: 30,
-      padrao: { n: "Naruto Clássico", id: "NarutoCNBR" },
-      exceto: { sab: { n: "Naruto Shippuden", id: "naldo-xipudem" } }
-    },
-    {
-      h: "18:30",
-      dur: 30,
-      padrao: { n: "Naruto Shippuden", id: "naldo-xipudem" },
-      exceto: { sab: { n: "Hunter x Hunter (1999)", id: "hunter-x-hunter-1999-pt-br-004" } }
-    },
-    {
-      h: "19:00",
-      dur: 30,
-      padrao: { n: "Yu-Gi-Oh!", id: "2000-yu-gi-oh-s-01" },
-      exceto: { sab: { n: "Dois Homens e Meio", id: "capa_20250815" } }
-    },
-    {
-      h: "19:30",
-      dur: 30,
-      padrao: { n: "Yu Yu Hakusho", id: "YuYuHakushoDublado" },
-      exceto: { ter: { n: "Hunter x Hunter (1999)", id: "hunter-x-hunter-1999-pt-br-004" }, qui: { n: "Hunter x Hunter (1999)", id: "hunter-x-hunter-1999-pt-br-004" }, sab: { n: "Kenan & Kel", id: ["PaixaoFlix-1-Temp", "PaixaoFlix-2-Temp", "PaixaoFlix-Kenan-e-Kel-3oTemp", "PaixaoFlix-Kenan-e-Kel-4oTemp"] } }
-    },
-    {
-      h: "20:00",
-      dur: 30,
-      padrao: { n: "Dois Homens e Meio", id: "capa_20250815" },
-      exceto: { sab: { n: "Futurama", id: "fut01" }}
-    },
-    {
-      h: "20:30",
-      dur: 30,
-      padrao: { n: "Kenan & Kel", id: ["PaixaoFlix-1-Temp", "PaixaoFlix-2-Temp", "PaixaoFlix-Kenan-e-Kel-3oTemp", "PaixaoFlix-Kenan-e-Kel-4oTemp"] },
-      exceto: { sab: { n: "Projeto Zeta", id: "projeto-zeta-dublado-pt-br" } }
-    },
-    {
-      h: "21:00",
-      dur: 30,
-      padrao: { n: "Futurama", id: "fut01" },
-      exceto: { sab: { n: "Um Maluco no Pedaço", id: "um-maluco-no-pedaco-6x-18" } }
-    },
-    {
-      h: "21:30",
-      dur: 30,
-      padrao: { n: "Batman: Os Bravos e os Destemidos", id: "batman-os-bravos-e-destemidos-2008-2011" },
-      exceto: { ter: { n: "Batman: A Série Animada", id: "desenhos-batman-a-serie-animada-19921995" }, qui: { n: "As Novas Aventuras do Batman", id: "desenhos-as-novas-aventuras-do-batman-19971999" } }
-    },
-    {
-      h: "22:00",
-      dur: 60,
-      padrao: { n: "Stranger Things", id: ["PaixaoFlix-Stranger-Things-2016-1a-Temporada", "PaixaoFlix-Stranger-Things-2017-2a-Temporada", "PaixaoFlix-Stranger-Things-3a-Temporada", "PaixaoFlix-Stranger-Things-4a-Temporada", "PaixaoFlix-Stranger-Things-4a-Temporada-2022-VOLUME-2"] },
-      exceto: { dom: { n: "Invencível", id: "invenciveldublado" } }
+  {
+    h: "07:00",
+    dur: 30,
+    padrao: { n: "Os Camundongos Aventureiros", id: ["desenho-animado-os-camundongos-aventureiros-1-temporada-completa", "desenho-animado-os-camundongos-aventureiros-2-temporada-completa"] },
+    exceto: {
+      ter: { n: "DuckTales", id: "duck-tales-dublado" },
+      qui: { n: "DuckTales", id: "duck-tales-dublado" },
+      sab: { n: "As Aventuras de Mickey e Donald", id: "mickey-e-donald-a-mina-de-ouro-do-pato-donald" },
+      dom: { n: "As Aventuras de Mickey e Donald", id: "mickey-e-donald-a-mina-de-ouro-do-pato-donald" }
     }
-  ];
+  },
+  {
+    h: "07:30",
+    dur: 30,
+    padrao: { n: "Ultimate Homem-Aranha", id: "ultimate-homem-aranha-dublado" },
+    exceto: {
+      qui: { n: "Homem-Aranha: A Série Animada (1994)", id: "homem-aranhaaserieanimada" },
+      sex: { n: "DuckTales", id: "duck-tales-dublado" },
+      sab: { n: "DuckTales", id: "duck-tales-dublado" },
+      dom: { n: "Os Vingadores: A Série", id: "os-vingadores-a-serie-dublado" }
+    }
+  },
+  {
+    h: "08:00",
+    dur: 30,
+    padrao: { n: "Dragon Ball Z Kai", id: "DBZKaiCNBR" },
+    exceto: {
+      ter: { n: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", id: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501" },
+      qui: { n: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", id: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501" },
+      sab: { n: "Coragem, o Cão Covarde", id: "coragemcaocovarde-backup" },
+      dom: { n: "Coragem, o Cão Covarde", id: "coragemcaocovarde-backup" }
+    }
+  },
+  {
+    h: "08:30",
+    dur: 30,
+    padrao: { n: "Os Vingadores Unidos", id: "os-vingadores-unidos-dublado" },
+    exceto: {
+      sex: { n: "Homem-Aranha: A Nova Série Animada", id: "homem-aranha-a-nova-serie-animada-dublado" },
+      sab: { n: "As Novas Aventuras do Batman", id: "desenhos-as-novas-aventuras-do-batman-19971999" },
+      dom: { n: "Caverna do Dragão", id: "caverna-do-dragao-1983-480p" }
+    }
+  },
+  {
+    h: "09:00",
+    dur: 30,
+    padrao: { n: "X-Men: A Série Animada", id: "X-MenTheAnimatedSeriesDublado" },
+    exceto: {
+      ter: { n: "As Aventuras de Jackie Chan", id: "as-aventuras-de-jackie-chan-Completo-paixaoflix" },
+      qui: { n: "As Aventuras de Jackie Chan", id: "as-aventuras-de-jackie-chan-Completo-paixaoflix" },
+      sab: { n: "O Que Há de Novo, Scooby-Doo?", id: "o-que-ha-de-novo-scooby-doo-1-temp" },
+      dom: { n: "Homem-Aranha: Ação Sem Limites", id: "homem-aranha-acao-sem-limites" }
+    }
+  },
+  {
+    h: "09:30",
+    dur: 30,
+    padrao: { n: "Dragon Ball (Clássico)", id: "DragonBallCNBR" },
+    exceto: {
+      sex: { n: "As Aventuras de Jackie Chan", id: "as-aventuras-de-jackie-chan-Completo-paixaoflix" },
+      sab: { n: "Dragon Ball Super", id: "DragonBallSuperCartoonNetworkBR" },
+      dom: { n: "Dragon Ball Super", id: "DragonBallSuperCartoonNetworkBR" }
+    }
+  },
+  {
+    h: "10:00",
+    dur: 30,
+    padrao: { n: "Homem-Aranha: A Série Animada (1994)", id: "homem-aranhaaserieanimada" },
+    exceto: {
+      ter: { n: "O Espetacular Homem-Aranha", id: "o-espetacular-homem-aranha-2008-dublado_202606" },
+      qua: { n: "Os Vingadores: Os Super-Heróis Mais Poderosos da Terra", id: "desenhos-os-vingadores-os-super-herois-mais-poderosos-da-terra-2010-2012_202501" },
+      sex: { n: "Batman: A Série Animada", id: "desenhos-batman-a-serie-animada-19921995" },
+      sab: { n: "Os Vingadores Unidos", id: "os-vingadores-unidos-dublado" },
+      dom: { n: "As Aventuras de Jackie Chan", id: "as-aventuras-de-jackie-chan-Completo-paixaoflix" }
+    }
+  },
+  {
+    h: "10:30",
+    dur: 30,
+    padrao: { n: "Caverna do Dragão", id: "caverna-do-dragao-1983-480p" },
+    exceto: {
+      ter: { n: "Dragon Ball Z", id: "DBZCN" },
+      qua: { n: "O Batman (2004-2008)", id: "o-batman-2004-2008" },
+      qui: { n: "Homem de Ferro: A Nova Série Animada", id: "homem-de-ferro-a-nova-serie-animada-dublado" },
+      sex: { n: "Dragon Ball GT", id: "DragonBallGTCNBR" },
+      sab: { n: "Dragon Ball (Clássico)", id: "DragonBallCNBR" },
+      dom: { n: "Os Cavaleiros do Zodíaco", id: ["cavaleirosdozodiaco", "cavaleirosdozodiaco_202107", "cavaleiros.-do.-zodiaco-03-saga-doze-casas", "cavaleiros-do-zodiaco-04-saga-asgard"] }
+    }
+  },
+  {
+    h: "11:00",
+    dur: 30,
+    padrao: { n: "Batman: Os Bravos e os Destemidos", id: "batman-os-bravos-e-destemidos-2008-2011" },
+    exceto: {
+      ter: { n: "Batman do Futuro", id: "desenhos-004-batman-do-futuro-batman-beyond-19992001" },
+      qua: { n: "Projeto Zeta", id: "projeto-zeta-dublado-pt-br" },
+      qui: { n: "Batman do Futuro", id: "desenhos-004-batman-do-futuro-batman-beyond-19992001" },
+      sab: { n: "X-Men Evolution", id: "desenhos-x-men-evolution-20002003_202501" },
+      dom: { n: "X-Men Evolution", id: "desenhos-x-men-evolution-20002003_202501" }
+    }
+  },
+  {
+    h: "11:30",
+    dur: 30,
+    padrao: { n: "Yu-Gi-Oh!", id: "2000-yu-gi-oh-s-01" }
+  },
+  {
+    h: "12:00",
+    dur: 30,
+    padrao: { n: "A Família Dinossauro", id: "17.-o-dia-da-geladeira_202605" },
+    exceto: {
+      sab: { n: "Super Choque", id: "PaixaoFlix-Super-Choque-Completo" },
+      dom: { n: "Superman: A Série Animada", id: ["superman-s-01-e-01-the-last-son-of-krypton-part-i", "superman-s-02-e-01-the-prometheon", "superman-s-03-e-02-knight-time", "superman-s-04-e-03-legacy-part-two"] }
+    }
+  },
+  {
+    h: "12:30",
+    dur: 30,
+    padrao: { n: "Um Maluco no Pedaço", id: "um-maluco-no-pedaco-6x-18" }
+  },
+  {
+    h: "13:00",
+    dur: 30,
+    padrao: { n: "Sítio do Picapau Amarelo", id: "sitio-do-picapau-amarelo-2001_202608" },
+    exceto: {
+      ter: { n: "Dois Homens e Meio", id: "capa_20250815" },
+      qui: { n: "Dois Homens e Meio", id: "capa_20250815" },
+      sab: { n: "Eu, A Patroa e as Crianças", id: "e.-p.-c-s-01-e-09-terminando-e-quebrando-720p" },
+      dom: { n: "Todo Mundo Odeia o Chris", id: ["PaixaoFlix-Todo-Mundo-Odeia-o-Chris-1-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-2-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-3-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-4-Temporada"] }
+    }
+  },
+  {
+    h: "13:30",
+    dur: { padrao: 30, sab: 60 },
+    padrao: { n: "Naruto Clássico", id: "NarutoCNBR" },
+    exceto: {
+      sab: { n: "Sai de Baixo", id: ["sai-de-baixo", "sdb-4temp"] },
+      dom: { n: "Eu, A Patroa e as Crianças", id: "e.-p.-c-s-01-e-09-terminando-e-quebrando-720p" }
+    }
+  },
+  {
+    h: "14:00",
+    dur: 30,
+    padrao: { n: "Kenan & Kel", id: ["PaixaoFlix-1-Temp", "PaixaoFlix-2-Temp", "PaixaoFlix-Kenan-e-Kel-3oTemp", "PaixaoFlix-Kenan-e-Kel-4oTemp"] },
+    exceto: {
+      seg: { n: "Batman: A Série Animada", id: "desenhos-batman-a-serie-animada-19921995" },
+      qua: { n: "Batman: A Série Animada", id: "desenhos-batman-a-serie-animada-19921995" },
+      sex: { n: "Superman: A Série Animada", id: ["superman-s-01-e-01-the-last-son-of-krypton-part-i", "superman-s-02-e-01-the-prometheon", "superman-s-03-e-02-knight-time", "superman-s-04-e-03-legacy-part-two"] },
+      sab: null
+    }
+  },
+  {
+    h: "14:30",
+    dur: 30,
+    padrao: { n: "As Tartarugas Mutantes Ninja", id: "tartarugasninja2003" },
+    exceto: {
+      qui: { n: "As Aventuras de Mickey e Donald", id: "mickey-e-donald-a-mina-de-ouro-do-pato-donald" },
+      sex: { n: "Eu, A Patroa e as Crianças", id: "e.-p.-c-s-01-e-09-terminando-e-quebrando-720p" },
+      sab: { n: "Dois Homens e Meio", id: "capa_20250815" },
+      dom: { n: "Dois Homens e Meio", id: "capa_20250815" }
+    }
+  },
+  {
+    h: "15:00",
+    dur: 30,
+    padrao: { n: "Dragon Ball Z", id: "DBZCN" },
+    exceto: {
+      ter: { n: "Super Choque", id: "PaixaoFlix-Super-Choque-Completo" },
+      qua: { n: "Todo Mundo Odeia o Chris", id: ["PaixaoFlix-Todo-Mundo-Odeia-o-Chris-1-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-2-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-3-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-4-Temporada"] },
+      qui: { n: "Super Choque", id: "PaixaoFlix-Super-Choque-Completo" },
+      sab: { n: "A Grande Família", id: "series-a-grande-familia-20012014_202503" },
+      dom: { n: "A Grande Família", id: "series-a-grande-familia-20012014_202503" }
+    }
+  },
+  {
+    h: "15:30",
+    dur: 30,
+    padrao: { n: "A Grande Família", id: "series-a-grande-familia-20012014_202503" },
+    exceto: {
+      qua: { n: "Dragon Ball Z", id: "DBZCN" }
+    }
+  },
+  {
+    h: "16:00",
+    dur: 30,
+    padrao: { n: "A Grande Família", id: "series-a-grande-familia-20012014_202503" },
+    exceto: {
+      sab: { n: "Naruto Clássico", id: "NarutoCNBR" },
+      dom: { n: "Naruto Clássico", id: "NarutoCNBR" }
+    }
+  },
+  {
+    h: "16:30",
+    dur: 30,
+    padrao: { n: "O Batman (2004-2008)", id: "o-batman-2004-2008" },
+    exceto: {
+      seg: { n: "Martin Mystery", id: "20221114_20221114_1323" },
+      qua: { n: "Pokémon", id: ["pokemonligaindigocartoonnetworkbr", "PKMLigaLaranjaCNBR", "PKMLigaJohtoCNBR"] },
+      qui: { n: "O Espetacular Homem-Aranha", id: "o-espetacular-homem-aranha-2008-dublado_202606" },
+      sab: { n: "Martin Mystery", id: "20221114_20221114_1323" },
+      dom: { n: "Ultimate Homem-Aranha", id: "ultimate-homem-aranha-dublado" }
+    }
+  },
+  {
+    h: "17:00",
+    dur: 30,
+    padrao: { n: "Naruto Shippuden", id: "naldo-xipudem" },
+    exceto: {
+      ter: { n: "Power Rangers", id: "power-rangers-dino-trovao-episodios" },
+      qua: { n: "Batman do Futuro", id: "desenhos-004-batman-do-futuro-batman-beyond-19992001" },
+      qui: { n: "Power Rangers", id: "power-rangers-dino-trovao-episodios" },
+      sex: { n: "Yu-Gi-Oh!", id: "2000-yu-gi-oh-s-01" },
+      dom: { n: "Batman: Os Bravos e os Destemidos", id: "batman-os-bravos-e-destemidos-2008-2011" }
+    }
+  },
+  {
+    h: "17:30",
+    dur: 30,
+    padrao: { n: "Os Cavaleiros do Zodíaco", id: ["cavaleirosdozodiaco", "cavaleirosdozodiaco_202107", "cavaleiros.-do.-zodiaco-03-saga-doze-casas", "cavaleiros-do-zodiaco-04-saga-asgard"] },
+    exceto: {
+      ter: { n: "Pokémon", id: ["pokemonligaindigocartoonnetworkbr", "PKMLigaLaranjaCNBR", "PKMLigaJohtoCNBR"] },
+      qui: { n: "Pokémon", id: ["pokemonligaindigocartoonnetworkbr", "PKMLigaLaranjaCNBR", "PKMLigaJohtoCNBR"] },
+      sab: { n: "Pokémon", id: ["pokemonligaindigocartoonnetworkbr", "PKMLigaLaranjaCNBR", "PKMLigaJohtoCNBR"] },
+      dom: { n: "Pokémon", id: ["pokemonligaindigocartoonnetworkbr", "PKMLigaLaranjaCNBR", "PKMLigaJohtoCNBR"] }
+    }
+  },
+  {
+    h: "18:00",
+    dur: 30,
+    padrao: { n: "Todo Mundo Odeia o Chris", id: ["PaixaoFlix-Todo-Mundo-Odeia-o-Chris-1-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-2-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-3-Temporada", "PaixaoFlix-Todo-Mundo-Odeia-o-Chris-4-Temporada"] }
+  },
+  {
+    h: "18:30",
+    dur: 30,
+    padrao: { n: "Eu, A Patroa e as Crianças", id: "e.-p.-c-s-01-e-09-terminando-e-quebrando-720p" }
+  },
+  {
+    h: "19:00",
+    dur: 30,
+    padrao: { n: "Yu Yu Hakusho", id: "YuYuHakushoDublado" },
+    exceto: {
+      seg: { n: "Hunter x Hunter (1999)", id: "hunter-x-hunter-1999-pt-br-004" },
+      qua: { n: "Hunter x Hunter (1999)", id: "hunter-x-hunter-1999-pt-br-004" },
+      sex: { n: "Hunter x Hunter (1999)", id: "hunter-x-hunter-1999-pt-br-004" }
+    }
+  },
+  {
+    h: "19:30",
+    dur: 30,
+    padrao: { n: "Três Espiãs Demais", id: "desenhos-tres-espias-demais-totally-spies-2001-2014" },
+    exceto: {
+      ter: { n: "Dragon Ball GT", id: "DragonBallGTCNBR" },
+      qui: { n: "Dragon Ball GT", id: "DragonBallGTCNBR" }
+    }
+  },
+  {
+    h: "20:00",
+    dur: 30,
+    padrao: { n: "Dois Homens e Meio", id: "capa_20250815" }
+  },
+  {
+    h: "20:30",
+    dur: 30,
+    padrao: { n: "Avatar: A Lenda de Aang", id: ["PaixaoFlix-Livro-1-Agua", "PaixaoFlix-Livro-2-Terra", "PaixaoFlix-Livro-3-Fogo"] },
+    exceto: {
+      ter: { n: "Avatar: A Lenda de Korra", id: "desenhos-avatar-a-lenda-de-korra-20122014" },
+      qui: { n: "Avatar: A Lenda de Korra", id: "desenhos-avatar-a-lenda-de-korra-20122014" },
+      sab: { n: "KND: A Turma do Bairro", id: ["conviteoumissaoallstars", "knd-n.-a.-b.-o.-s"] },
+      dom: { n: "Pokémon Chronicles", id: "PokemonChroniclesCNBR" }
+    }
+  },
+  {
+    h: "21:00",
+    dur: 30,
+    padrao: { n: "Futurama", id: "fut01" }
+  },
+  {
+    h: "21:30",
+    dur: 30,
+    padrao: { n: "Naruto Shippuden", id: "naldo-xipudem" }
+  },
+  {
+    h: "22:00",
+    dur: 30,
+    padrao: { n: "Stranger Things", id: ["PaixaoFlix-Stranger-Things-2016-1a-Temporada", "PaixaoFlix-Stranger-Things-2017-2a-Temporada", "PaixaoFlix-Stranger-Things-3a-Temporada", "PaixaoFlix-Stranger-Things-4a-Temporada", "PaixaoFlix-Stranger-Things-4a-Temporada-2022-VOLUME-2"] },
+    exceto: {
+      seg: { n: "Dragon Ball Daima", id: "DragonBallDaimaAdultSwimBrasil" },
+      ter: { n: "Fullmetal Alchemist", id: "fullmetal-completo-pt-br" },
+      qua: { n: "A Grande Família", id: "series-a-grande-familia-20012014_202503" },
+      qui: { n: "Fullmetal Alchemist", id: "fullmetal-completo-pt-br" },
+      dom: { n: "Invencível", id: "invenciveldublado" }
+    }
+  }
+];
 
   let gradeAutomated = [];
   let indiceAtual = -1;
