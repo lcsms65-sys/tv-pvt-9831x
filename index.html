@@ -56,8 +56,6 @@
       margin-left: auto;
     }
 
-    .logo-site { margin-bottom: 10px; }
-    
     .player-container { 
       border: 3px solid #ffcc00; 
       border-radius: 8px; 
@@ -416,46 +414,6 @@
   let tvLigada = false;
   let etapaFallback = 0;
 
-  /*
-   * ============================================================
-   * NOVO CONTROLE DE PLAYLIST / OCORRÊNCIAS / REPRISES
-   * ============================================================
-   *
-   * Como usar:
-   *
-   * 1. Ocorrência normal:
-   *
-   * {
-   *   h: "09:00",
-   *   dur: 30,
-   *   padrao: { n: "Dragon Ball", id: "DragonBallCNBR" }
-   * }
-   *
-   * 2. Reprise:
-   *
-   * {
-   *   h: "15:00",
-   *   dur: 30,
-   *   padrao: { n: "Dragon Ball", id: "DragonBallCNBR" },
-   *   repriseDe: "09:00"
-   * }
-   *
-   * A ocorrência das 15:00 usará o mesmo episódio que foi
-   * atribuído à ocorrência das 09:00 naquele mesmo dia.
-   *
-   * Não é necessário informar índice de episódio.
-   *
-   * 3. Várias ocorrências normais do mesmo programa:
-   *
-   * Elas recebem posições diferentes da playlist.
-   *
-   * 4. Uma reprise não consome uma nova posição da playlist.
-   *
-   * 5. O controle é calculado em memória a partir da data atual.
-   *    Não usamos localStorage, para não criar estado diferente
-   *    entre dispositivos nem atrapalhar testes alterando data/hora.
-   */
-
   let travaMudancaMidia = false;
   let ultimaChaveMudanca = "";
   let dataGradeAtual = "";
@@ -468,11 +426,6 @@
     ].join('-');
   }
 
-  /*
-   * Usa a data do calendário local, sem calcular a duração do dia em
-   * milissegundos. Isso evita repetir ou pular a posição diária quando
-   * houver diferença de fuso ou horário de verão.
-   */
   function obterDiaDoAno(agora = new Date()) {
     const inicioDoDiaUTC = Date.UTC(
       agora.getFullYear(),
@@ -577,12 +530,6 @@
   function obterOcorrenciaFonteDaReprise(programa) {
     if (!programa || !programa.repriseDe) return null;
 
-    /*
-     * A reprise procura a ocorrência do horário indicado.
-     * Para evitar apontar para ela própria ou para uma ocorrência
-     * posterior, somente aceitamos uma ocorrência com horário
-     * anterior ao horário da reprise.
-     */
     const horarioReprise = horaParaMinutos(programa.h);
 
     const candidatas = gradeAutomated.filter(p => {
@@ -595,10 +542,6 @@
       return candidatas[candidatas.length - 1];
     }
 
-    /*
-     * Também permitimos procurar diretamente pelo horário quando
-     * não houver ambiguidade.
-     */
     const direta = encontrarOcorrenciaAnteriorPorHorario(programa.repriseDe);
 
     if (direta && direta !== programa) {
@@ -613,11 +556,6 @@
 
     const diaDoAno = obterDiaDoAno();
 
-    /*
-     * REPRISE:
-     * Nunca cria uma nova posição. Usa a mesma posição da
-     * ocorrência fonte.
-     */
     if (programa.repriseDe) {
       const fonte = obterOcorrenciaFonteDaReprise(programa);
 
@@ -625,10 +563,6 @@
         return fonte.epIndexAtual % quantidadeEpisodios;
       }
 
-      /*
-       * Se a fonte ainda não tiver sido carregada, calculamos
-       * deterministicamente a posição que ela teria.
-       */
       if (fonte) {
         return calcularIndiceInicialOcorrencia(
           fonte,
@@ -637,20 +571,6 @@
       }
     }
 
-    /*
-     * OCORRÊNCIA NORMAL:
-     *
-     * A primeira ocorrência usa a posição determinada pela data.
-     * As ocorrências seguintes do mesmo programa avançam a playlist.
-     *
-     * Isso permite:
-     *
-     * 09:00 -> episódio X
-     * 12:00 -> episódio X+1
-     * 15:00 -> episódio X+2
-     *
-     * sem precisar digitar números de episódios.
-     */
     const chavePlaylist = obterChavePlaylist(programa);
     const dataHoje = new Date();
     const ocorrenciasAntes =
@@ -661,12 +581,6 @@
     const ocorrenciasAnterioresNoDia =
       contarOcorrenciasNormaisAnterioresNoDia(programa);
 
-    /*
-     * A posição agora avança somente quando existe um bloco normal
-     * daquele programa. Dias sem o programa não consomem episódio.
-     * Blocos diferentes no mesmo dia ocupam posições consecutivas.
-     * Reprises retornam antes e não consomem nova posição.
-     */
     return (
       ocorrenciasAntes +
       ocorrenciasAnterioresNoDia
@@ -689,11 +603,6 @@
 
     const hoje = obterChaveData();
 
-    /*
-     * Se já foi calculado nesta mesma data, não reinicia a playlist.
-     * Essa é a trava importante para evitar que uma nova chamada
-     * de inicialização faça a playlist voltar para o início.
-     */
     if (
       programa.playlistPreparada &&
       programa.ultimaDataPlaylist === hoje &&
@@ -719,10 +628,6 @@
 
     if (!fonte) return null;
 
-    /*
-     * Se a fonte já tiver sido preparada, usamos exatamente o
-     * episódio dela.
-     */
     if (
       fonte.playlistPreparada &&
       fonte.epIndexAtual >= 0 &&
@@ -733,10 +638,6 @@
       return indice;
     }
 
-    /*
-     * Se a fonte ainda não estiver carregada, o cálculo é
-     * determinístico e produz a mesma posição que ela receberia.
-     */
     const indice = calcularIndiceInicialOcorrencia(
       fonte,
       programa.listaEpisodios.length
@@ -794,14 +695,6 @@
 
     const agora = new Date();
 
-    /*
-     * Nunca permitir que uma reprise seja transformada em uma
-     * nova sequência independente.
-     *
-     * Durante a própria ocorrência da reprise, porém, se houver
-     * espaço dentro do bloco para outro episódio, continuamos
-     * normalmente a partir do episódio reprisado.
-     */
     let novoIndice;
 
     if (programa.epIndexAtual < 0) {
@@ -842,12 +735,6 @@
     return true;
   }
 
-  /*
-   * ============================================================
-   * FIM DO NOVO CONTROLE
-   * ============================================================
-   */
-
   function atualizarRelogio() {
     const agora = new Date();
     const h = String(agora.getHours()).padStart(2, '0');
@@ -866,18 +753,99 @@
   atualizarRelogio();
 
   const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+  // ============================================================
+  // LIGA DA JUSTIÇA - EPISÓDIOS VIRTUAIS DENTRO DE UM ÚNICO MP4
+  // Item do Internet Archive: c230ddae3354a3de49292ae9d572f566
+  // Cada episódio usa a mesma URL, mas possui início/fim próprios.
+  // ============================================================
+  const LIGA_DA_JUSTICA_ID = "c230ddae3354a3de49292ae9d572f566";
+
+  const LIGA_DA_JUSTICA_TIMESTAMPS = [
+    { titulo: "Ep.01 - Origens Secretas (Parte 1)", inicio: "00:00:00" },
+    { titulo: "Ep.02 - Origens Secretas (Parte 2)", inicio: "00:21:24" },
+    { titulo: "Ep.03 - Origens Secretas (Parte 3)", inicio: "00:43:27" },
+    { titulo: "Ep.04 - Na Noite Mais Escura (Parte 1)", inicio: "01:04:51" },
+    { titulo: "Ep.05 - Na Noite Mais Escura (Parte 2)", inicio: "01:26:20" },
+    { titulo: "Ep.06 - Inimigo Submarino (Parte 1)", inicio: "01:48:20" },
+    { titulo: "Ep.07 - Inimigo Submarino (Parte 2)", inicio: "02:09:47" },
+    { titulo: "Ep.08 - Paraiso Perdido (Parte 1)", inicio: "02:31:20" },
+    { titulo: "Ep.09 - Paraíso Perdido (Parte 2)", inicio: "02:52:34" },
+    { titulo: "Ep.10 - Planeta Arena (Parte 1)", inicio: "03:14:26" },
+    { titulo: "Ep.11 - Planeta Arena (Parte 2)", inicio: "03:35:57" },
+    { titulo: "Ep.12 - Corajosos e Ousados (Parte 1)", inicio: "03:57:39" },
+    { titulo: "Ep.13 - Corajosos e Ousados (Parte 2)", inicio: "04:19:06" },
+    { titulo: "Ep.14 - Fúria (Parte 1)", inicio: "04:40:37" },
+    { titulo: "Ep.15 - Fúria (Parte 2)", inicio: "05:02:04" },
+    { titulo: "Ep.16 - Lendas (Parte 1)", inicio: "05:23:28" },
+    { titulo: "Ep.17 - Lendas (Parte 2)", inicio: "05:45:16" },
+    { titulo: "Ep.18 - Injustiça para Todos (Parte 1)", inicio: "06:06:52" },
+    { titulo: "Ep.19 - Injustiça para Todos (Parte 2)", inicio: "06:28:23" },
+    { titulo: "Ep.20 - Um Cavaleiro das Sombras (Parte 1)", inicio: "06:50:09" },
+    { titulo: "Ep.21 - Um Cavaleiro das Sombras (Parte 2)", inicio: "07:11:44" },
+    { titulo: "Ep.22 - Metamorfose (Parte 1)", inicio: "07:33:33" },
+    { titulo: "Ep.23 - Metamorfose (Parte 2)", inicio: "07:55:12" },
+    { titulo: "Ep.24 - Nos Tempos de Savage (Parte 1)", inicio: "08:16:45" },
+    { titulo: "Ep.25 - Nos Tempos de Savage (Parte 2)", inicio: "08:38:23" },
+    { titulo: "Ep.26 - Nos Tempos de Savage (Parte 3)", inicio: "08:59:26" }
+  ].map(ep => ({
+    ...ep,
+    inicio: converterParaSegundos(ep.inicio)
+  }));
+
+  function ehLigaDaJusticaId(id) {
+    return id === LIGA_DA_JUSTICA_ID;
+  }
+
+  function ehLigaDaJusticaPrograma(programa) {
+    return !!programa && ehLigaDaJusticaId(programa.idArchive);
+  }
+
+  function criarEpisodiosVirtuaisLigaDaJustica(
+    nomeArquivo,
+    duracaoVideo,
+    servidor
+  ) {
+    /*
+     * EDIÇÃO 1 APLICADA:
+     * Se os metadados informarem o servidor do item,
+     * usamos a URL direta do nó correto (ex.: ia601507),
+     * evitando o fallback e o HTTP 464.
+     */
+    const urlVideo =
+      (servidor && servidor.host && servidor.dir)
+        ? `https://${servidor.host}${servidor.dir}/${encodeURIComponent(nomeArquivo)}`
+        : `https://archive.org/download/${LIGA_DA_JUSTICA_ID}/${encodeURIComponent(nomeArquivo)}`;
+
+    return LIGA_DA_JUSTICA_TIMESTAMPS.map((ep, index) => {
+      const proximo = LIGA_DA_JUSTICA_TIMESTAMPS[index + 1];
+      const fim = proximo
+        ? proximo.inicio
+        : duracaoVideo > ep.inicio
+          ? duracaoVideo
+          : ep.inicio + 30 * 60;
+
+      return {
+        titulo: ep.titulo,
+        url: urlVideo,
+        duracao: Math.max(0, fim - ep.inicio),
+        inicio: ep.inicio,
+        fim,
+        segmentoLigaDaJustica: true
+      };
+    });
+  }
 
   const GRADE_UNIFICADA = [
   {
-  h: "06:00",
-  dur: 30,
-  padrao: { n: "Novo Telecurso", id: "novo-telecurso" }
-},
-{
-  h: "06:30",
-  dur: 30,
-  padrao: { n: "Novo Telecurso", id: "novo-telecurso" }
-},
+    h: "06:00",
+    dur: 30,
+    padrao: { n: "Novo Telecurso", id: "novo-telecurso" }
+  },
+  {
+    h: "06:30",
+    dur: 30,
+    padrao: { n: "Novo Telecurso", id: "novo-telecurso" }
+  },
   {
     h: "07:00",
     dur: 30,
@@ -982,7 +950,10 @@
   {
     h: "11:30",
     dur: 30,
-    padrao: { n: "Yu-Gi-Oh!", id: "2000-yu-gi-oh-s-01" }
+    padrao: { n: "Yu-Gi-Oh!", id: "2000-yu-gi-oh-s-01" },
+    exceto: {
+      sab: { n: "Liga da Justiça", id: "c230ddae3354a3de49292ae9d572f566" }
+    }
   },
   {
     h: "12:00",
@@ -1204,7 +1175,6 @@
     const [h, m] = horarioStr.split(':').map(Number);
     return h * 60 + m;
   }
-
   function limparTimerReconexao() {
     if (timerReconexao) {
       clearInterval(timerReconexao);
@@ -1272,6 +1242,82 @@
         : [idAlvo];
     
     const requisicoes = colecoes.map(async (id) => {
+
+      // A Liga da Justiça é um único MP4 com 26 episódios.
+      // Não deixamos o carregador tratar o vídeo de 9 horas como um
+      // único episódio; criamos episódios virtuais pelos timestamps.
+      if (ehLigaDaJusticaId(id)) {
+        try {
+          const maxTentativasLiga = 3;
+          let respostaLiga = null;
+
+          for (
+            let tentativaLiga = 1;
+            tentativaLiga <= maxTentativasLiga;
+            tentativaLiga++
+          ) {
+            try {
+              let urlAPILiga =
+                `https://archive.org/metadata/${id}`;
+
+              if (tentativaLiga === maxTentativasLiga) {
+                urlAPILiga =
+                  `https://api.allorigins.win/raw?url=${encodeURIComponent(urlAPILiga)}`;
+              }
+
+              respostaLiga = await fetch(urlAPILiga);
+
+              if (respostaLiga.ok) break;
+            } catch (e) {
+              if (tentativaLiga < maxTentativasLiga) {
+                await new Promise(r => setTimeout(r, 1000));
+              }
+            }
+          }
+
+          if (!respostaLiga || !respostaLiga.ok) return [];
+
+          const dadosLiga = await respostaLiga.json();
+
+          const candidatosLiga = (dadosLiga.files || [])
+            .filter(f =>
+              f &&
+              f.name &&
+              f.name.toLowerCase().endsWith('.mp4') &&
+              !f.name.endsWith('_thumb.mp4')
+            )
+            .sort((a, b) =>
+              converterParaSegundos(b.length) -
+              converterParaSegundos(a.length)
+            );
+
+          if (!candidatosLiga.length) return [];
+
+          const arquivoLiga = candidatosLiga[0];
+          const duracaoVideo = converterParaSegundos(arquivoLiga.length);
+
+          /*
+           * EDIÇÃO 2 APLICADA:
+           * Passamos o servidor real do item para montar
+           * a URL direta (evita HTTP 464 do servidor chumbado).
+           */
+          return criarEpisodiosVirtuaisLigaDaJustica(
+            arquivoLiga.name,
+            duracaoVideo,
+            {
+              host: dadosLiga.server,
+              dir: dadosLiga.dir
+            }
+          );
+
+        } catch (erroLiga) {
+          console.error(
+            'Erro ao carregar Liga da Justiça:',
+            erroLiga
+          );
+          return [];
+        }
+      }
       const maxTentativas = 3;
       let resposta = null;
 
@@ -1538,24 +1584,15 @@
         listaEpisodios: [],
         epIndexAtual: -1,
 
-        /*
-         * NOVO:
-         * Se existir, essa ocorrência é uma reprise.
-         *
-         * Exemplo:
-         * repriseDe: "09:00"
-         */
         repriseDe: slot.repriseDe || null,
 
-        /*
-         * Controle interno.
-         */
         ocorrenciaId: "",
         numeroOcorrenciaMesmoPrograma: 0,
         indiceInicialPlaylist: -1,
         playlistPreparada: false,
         ultimaDataPlaylist: "",
         ehReprise: !!slot.repriseDe,
+        ehLigaDaJustica: ehLigaDaJusticaId(progInfo.id),
         transicoesProtegidas: 0
       });
     });
@@ -1665,15 +1702,6 @@
         programa.listaEpisodios =
           episodios;
 
-        /*
-         * NOVO:
-         * A seleção agora é feita pela ocorrência.
-         *
-         * Isso permite:
-         * - mesma atração várias vezes no dia;
-         * - episódios diferentes em cada ocorrência;
-         * - reprise apontando para outra ocorrência.
-         */
         prepararEpisodioDaOcorrencia(
           programa
         );
@@ -1740,6 +1768,27 @@
 
     const programaAtual =
       gradeAutomated[indiceAtual];
+
+    // A Liga da Justiça tem episódios segmentados dentro do mesmo MP4.
+    // O fim do segmento é tratado por timeupdate; nunca avançamos para
+    // outro episódio dentro do mesmo bloco de 30 minutos aqui.
+    if (
+      programaAtual &&
+      ehLigaDaJusticaPrograma(programaAtual)
+    ) {
+      const proximoPrograma = gradeAutomated[indiceAtual + 1];
+
+      if (segundosHoje < limiteNoite) {
+        if (proximoPrograma) {
+          exibirTelaIntervalo(proximoPrograma, 0);
+        } else {
+          encerrarSinalMadrugada();
+        }
+      } else {
+        encerrarSinalMadrugada();
+      }
+      return;
+    }
 
     if (
       programaAtual &&
@@ -2061,12 +2110,6 @@
             programa.listaEpisodios =
               novosEpisodios;
 
-            /*
-             * IMPORTANTE:
-             * Não fazemos simplesmente diaDoAno % length.
-             * A ocorrência continua sendo responsável pela
-             * seleção do episódio.
-             */
             prepararEpisodioDaOcorrencia(
               programa
             );
@@ -2081,7 +2124,6 @@
         30000
       );
   }
-
   function aplicarEstrategiaFallback(
     programa,
     index
@@ -2116,13 +2158,55 @@
 
     } else if (etapaFallback === 2) {
 
-      player.src =
-        urlOriginal.replace(
-          "archive.org/download/",
-          "ia801501.us.archive.org/items/"
-        );
+      /*
+       * EDIÇÃO 3 APLICADA:
+       * Consulta o servidor real do item nos metadados,
+       * em vez de chumbar um servidor fixo (ia801501).
+       * Funciona para TODAS as coleções da grade.
+       */
+      const idDoItem =
+        urlOriginal
+          .replace("https://archive.org/download/", "")
+          .split("/")[0];
+      const nomeDoArquivo =
+        urlOriginal.split("/").pop();
+
+      fetch(
+        `https://archive.org/metadata/${idDoItem}`
+      )
+        .then(function(resposta) {
+          return resposta.json();
+        })
+        .then(function(meta) {
+          if (meta && meta.server && meta.dir) {
+            player.src =
+              `https://${meta.server}${meta.dir}/${encodeURIComponent(nomeDoArquivo)}`;
+          } else {
+            player.src = urlOriginal;
+          }
+          player.load();
+          player.play().catch(function() {});
+        })
+        .catch(function() {
+          player.src = urlOriginal;
+          player.load();
+        });
 
     } else if (etapaFallback === 3) {
+
+      /*
+       * EDIÇÃO 4 APLICADA:
+       * A Liga da Justiça não tem versões alternativas
+       * (_640 / proxy). Volta para a URL original
+       * e desiste do fallback sem travar no proxy.
+       */
+      if (
+        urlOriginal.includes(LIGA_DA_JUSTICA_ID)
+      ) {
+        etapaFallback = 0;
+        tratarErroOuDemora(programa);
+        return;
+      }
 
       const urlAlternativa =
         urlOriginal.replace(
@@ -2188,32 +2272,40 @@
 
     if (!programa) return;
 
-    /*
-     * NOVO:
-     * Sempre garante que a ocorrência tenha
-     * sua posição correta antes de tocar.
-     */
+    let episodioAtualSelecionado = null;
+
     if (
       programa.listaEpisodios &&
       programa.listaEpisodios.length > 0
     ) {
+      prepararEpisodioDaOcorrencia(programa);
+      episodioAtualSelecionado =
+        programa.listaEpisodios[programa.epIndexAtual] || null;
+    }
 
-      prepararEpisodioDaOcorrencia(
-        programa
-      );
+    if (programa._ligaTimeupdateHandler) {
+      const playerAnterior = document.getElementById('player');
+      if (playerAnterior) {
+        playerAnterior.removeEventListener(
+          'timeupdate',
+          programa._ligaTimeupdateHandler
+        );
+      }
+      programa._ligaTimeupdateHandler = null;
+    }
 
-      if (
-        programa.epIndexAtual >= 0 &&
-        programa.listaEpisodios[
-          programa.epIndexAtual
-        ]
-      ) {
+    if (
+      programa.listaEpisodios &&
+      programa.listaEpisodios.length > 0
+    ) {
+      if (!episodioAtualSelecionado) {
+        prepararEpisodioDaOcorrencia(programa);
+        episodioAtualSelecionado =
+          programa.listaEpisodios[programa.epIndexAtual] || null;
+      }
 
-        programa.u =
-          programa
-            .listaEpisodios[
-              programa.epIndexAtual
-            ].url;
+      if (episodioAtualSelecionado) {
+        programa.u = episodioAtualSelecionado.url;
       }
     }
 
@@ -2274,6 +2366,20 @@
       );
     };
 
+    /*
+     * EDIÇÃO 5 APLICADA:
+     * 90s para episódios longos (> 50 min),
+     * 30s para o restante.
+     */
+    const epParaTimeout =
+      programa.listaEpisodios &&
+      programa.listaEpisodios[programa.epIndexAtual];
+
+    const timeoutEfetivo =
+      epParaTimeout && epParaTimeout.duracao > 3000
+        ? 90000
+        : STEP_TIMEOUT_MS;
+
     timeoutCarregamento =
       setTimeout(
         () => {
@@ -2287,7 +2393,7 @@
           }
 
         },
-        STEP_TIMEOUT_MS
+        timeoutEfetivo
       );
 
     player.oncanplay = function() {
@@ -2320,6 +2426,100 @@
 
     player.muted = false;
     player.volume = 1.0;
+
+    // ============================================================
+    // LIGA DA JUSTIÇA: reproduz somente o segmento do episódio.
+    // ============================================================
+    if (
+      ehLigaDaJusticaPrograma(programa) &&
+      episodioAtualSelecionado &&
+      episodioAtualSelecionado.segmentoLigaDaJustica
+    ) {
+      const episodio = episodioAtualSelecionado;
+
+      const finalizarSegmentoLiga = () => {
+        if (programa._ligaTimeupdateHandler) {
+          player.removeEventListener(
+            'timeupdate',
+            programa._ligaTimeupdateHandler
+          );
+          programa._ligaTimeupdateHandler = null;
+        }
+
+        const proximoPrograma =
+          gradeAutomated[index + 1];
+
+        if (proximoPrograma) {
+          exibirTelaIntervalo(proximoPrograma, 0);
+        } else {
+          encerrarSinalMadrugada();
+        }
+      };
+
+      let segmentoLigaIniciado = false;
+
+      const iniciarSegmentoLiga = () => {
+        if (segmentoLigaIniciado) return;
+        segmentoLigaIniciado = true;
+
+        const agoraSegmento = new Date();
+        const minutosAgora =
+          agoraSegmento.getHours() * 60 +
+          agoraSegmento.getMinutes();
+        const segundosAgora =
+          agoraSegmento.getSeconds();
+
+        const decorridosDesdeInicio =
+          ((minutosAgora - programa.m) * 60) +
+          segundosAgora;
+
+        if (decorridosDesdeInicio < 0) {
+          player.currentTime = episodio.inicio;
+        } else if (decorridosDesdeInicio >= episodio.duracao) {
+          finalizarSegmentoLiga();
+          return;
+        } else {
+          player.currentTime =
+            episodio.inicio + decorridosDesdeInicio;
+        }
+
+        programa._ligaTimeupdateHandler = () => {
+          if (!player.duration || !episodio.fim) return;
+
+          if (player.currentTime >= episodio.fim - 0.15) {
+            player.currentTime = episodio.fim;
+            finalizarSegmentoLiga();
+          }
+        };
+
+        player.addEventListener(
+          'timeupdate',
+          programa._ligaTimeupdateHandler
+        );
+
+        if (tvLigada) {
+          player.play()
+            .then(() => {
+              player.muted = false;
+            })
+            .catch(() => {});
+        }
+      };
+
+      player.addEventListener(
+        'loadedmetadata',
+        iniciarSegmentoLiga,
+        { once: true }
+      );
+
+      // No bloco de origem (como 11:30), inicia no começo do episódio.
+      // Em entrada tardia na página, o ponto é calculado acima.
+      if (player.readyState >= 1) {
+        iniciarSegmentoLiga();
+      }
+
+      return;
+    }
 
     if (sincronizarSegundos) {
 
