@@ -744,7 +744,7 @@
     document.getElementById('clock').innerText = `${h}:${m}`;
 
     if (h === '06' && m === '00' && s === '00') {
-      console.log("⏰ 06:00 da manhã! Reativando sinal da transmissão...");
+      console.log("⏰ 07:00 da manhã! Reativando sinal da transmissão...");
       inicializarGradeAutomatica();
     }
   }
@@ -912,7 +912,7 @@
   {
     h: "10:30",
     dur: 30,
-    padrao: { n: "Batman: Os Bravos e os Destemidos", id: "batman-os-bravos-e-destemidos-2008-2011"" },
+    padrao: { n: "Batman: Os Bravos e os Destemidos", id: "batman-os-bravos-e-destemidos-2008-2011" },
     exceto: {
       ter: { n: "Batman do Futuro", id: "desenhos-004-batman-do-futuro-batman-beyond-19992001" },
       qua: { n: "Projeto Zeta", id: "projeto-zeta-dublado-pt-br" },
@@ -981,7 +981,7 @@
       seg: { n: "Batman: A Série Animada", id: "desenhos-batman-a-serie-animada-19921995" },
       qua: { n: "Batman: A Série Animada", id: "desenhos-batman-a-serie-animada-19921995" },
       sex: { n: "Superman: A Série Animada", id: ["superman-s-01-e-01-the-last-son-of-krypton-part-i", "superman-s-02-e-01-the-prometheon", "superman-s-03-e-02-knight-time", "superman-s-04-e-03-legacy-part-two"] },
-      sab: null
+      sab: null,
       dom: { n: "Kenan & Kel", id: ["PaixaoFlix-1-Temp", "PaixaoFlix-2-Temp", "PaixaoFlix-Kenan-e-Kel-3oTemp", "PaixaoFlix-Kenan-e-Kel-4oTemp"] }
     }
   },
@@ -1052,7 +1052,7 @@
   {
     h: "17:30",
     dur: 30,
-    padrao: { n: "Os Cavaleiros do Zodíaco", id: "cdz_full"aga-asgard"] },
+    padrao: { n: "Os Cavaleiros do Zodíaco", id: "cdz_full" },
     exceto: {
       ter: { n: "Pokémon", id: ["pokemonligaindigocartoonnetworkbr", "PKMLigaLaranjaCNBR", "PKMLigaJohtoCNBR"] },
       qui: { n: "Pokémon", id: ["pokemonligaindigocartoonnetworkbr", "PKMLigaLaranjaCNBR", "PKMLigaJohtoCNBR"] },
@@ -1622,9 +1622,9 @@
       'a-seguir-lista'
     ).innerHTML =
       `<div class="a-seguir-item">
-        <span class="a-seguir-time">06:00</span>
+        <span class="a-seguir-time">07:00</span>
         <span class="a-seguir-name">
-          Novo Telecurso
+          Dragon Ball Super
         </span>
       </div>`;
     
@@ -1648,7 +1648,7 @@
 
     if (
       minutosHoje >= horaParaMinutos("23:00") ||
-      minutosHoje < horaParaMinutos("06:00")
+      minutosHoje < horaParaMinutos("07:00")
     ) {
       encerrarSinalMadrugada();
       return;
