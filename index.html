@@ -867,9 +867,9 @@
     dur: 30,
     padrao: { n: "Os Vingadores Unidos", id: "os-vingadores-unidos-dublado" },
     exceto: {
-      seg: { n: "Os Cavaleiros do Zodíaco", id: "cdz_full" },
-      qua: { n: "Os Cavaleiros do Zodíaco", id: "cdz_full" },
-      sex: { n: "Os Cavaleiros do Zodíaco", id: "cdz_full" },
+      seg: { n: "Os Cavaleiros do Zodíaco", id: ["cavaleirosdozodiaco", "cavaleirosdozodiaco_202107", "cavaleiros.-do.-zodiaco-03-saga-doze-casas", "cavaleiros-do-zodiaco-04-saga-asgard"] },
+      qua: { n: "Os Cavaleiros do Zodíaco", id: ["cavaleirosdozodiaco", "cavaleirosdozodiaco_202107", "cavaleiros.-do.-zodiaco-03-saga-doze-casas", "cavaleiros-do-zodiaco-04-saga-asgard"] },
+      sex: { n: "Os Cavaleiros do Zodíaco", id: ["cavaleirosdozodiaco", "cavaleirosdozodiaco_202107", "cavaleiros.-do.-zodiaco-03-saga-doze-casas", "cavaleiros-do-zodiaco-04-saga-asgard"] },
       sab: { n: "As Novas Aventuras do Batman", id: "desenhos-as-novas-aventuras-do-batman-19971999" },
       dom: { n: "Caverna do Dragão", id: "caverna-do-dragao-1983-480p" }
     }
@@ -918,7 +918,7 @@
       qua: { n: "Projeto Zeta", id: "projeto-zeta-dublado-pt-br" },
       qui: { n: "Batman do Futuro", id: "desenhos-004-batman-do-futuro-batman-beyond-19992001" },
       sab: { n: "Dragon Ball (Clássico)", id: "DragonBallCNBR" },
-      dom: { n: "Os Cavaleiros do Zodíaco", id: "cdz_full" }
+      dom: { n: "Os Cavaleiros do Zodíaco", id: ["cavaleirosdozodiaco", "cavaleirosdozodiaco_202107", "cavaleiros.-do.-zodiaco-03-saga-doze-casas", "cavaleiros-do-zodiaco-04-saga-asgard"] }
     }
   },
   {
@@ -1050,7 +1050,7 @@
   {
     h: "17:30",
     dur: 30,
-    padrao: { n: "Os Cavaleiros do Zodíaco", id: "cdz_full" },
+    padrao: { n: "Os Cavaleiros do Zodíaco", id: ["cavaleirosdozodiaco", "cavaleirosdozodiaco_202107", "cavaleiros.-do.-zodiaco-03-saga-doze-casas", "cavaleiros-do-zodiaco-04-saga-asgard"] },
     exceto: {
       ter: { n: "Pokémon", id: ["pokemonligaindigocartoonnetworkbr", "PKMLigaLaranjaCNBR", "PKMLigaJohtoCNBR"] },
       qui: { n: "Pokémon", id: ["pokemonligaindigocartoonnetworkbr", "PKMLigaLaranjaCNBR", "PKMLigaJohtoCNBR"] },
@@ -1481,7 +1481,7 @@
                   ''
                 ),
               url:
-                `https://archive.org/download/${id}/${encodeURIComponent(f.name)}`,
+                `https://archive.org/download/${id}/${f.name.split('/').map(s => encodeURIComponent(s)).join('/')}`,
               duracao:
                 converterParaSegundos(f.length)
             }));
@@ -2106,141 +2106,102 @@
         30000
       );
   }
-  function aplicarEstrategiaFallback(
-    programa,
-    index
-  ) {
+function aplicarEstrategiaFallback(programa, index) {
+  if (timeoutCarregamento) {
+    clearTimeout(timeoutCarregamento);
+  }
 
-    if (timeoutCarregamento) {
-      clearTimeout(
-        timeoutCarregamento
-      );
-    }
+  etapaFallback++;
 
-    etapaFallback++;
+  const player = document.getElementById('player');
 
-    const player =
-      document.getElementById('player');
+  let urlOriginal =
+    programa.listaEpisodios && programa.listaEpisodios.length > 0
+      ? programa.listaEpisodios[
+          programa.epIndexAtual >= 0 ? programa.epIndexAtual : 0
+        ].url
+      : programa.u;
 
-    const urlOriginal =
-      programa.listaEpisodios &&
-      programa.listaEpisodios.length > 0
-        ? programa
-            .listaEpisodios[
-              programa.epIndexAtual >= 0
-                ? programa.epIndexAtual
-                : 0
-            ].url
-        : programa.u;
+  // Garante a remoção de querystrings antigas (ex: ?retry=...)
+  urlOriginal = urlOriginal.split('?')[0];
 
-    if (etapaFallback === 1) {
+  // ETAPA 1: Busca o nó real do servidor via API de Metadados (Resolve o problema de CDN)
+  if (etapaFallback === 1) {
+    const prefixoArchive = "https://archive.org/download/";
 
-      player.src =
-        `${urlOriginal}?retry=${Date.now()}`;
+    // Só aplica a estratégia de metadados se for realmente um item do Archive
+    if (urlOriginal.startsWith(prefixoArchive)) {
+      const partes = urlOriginal.replace(prefixoArchive, "").split("/");
+      const idDoItem = partes[0];
+      const nomeDoArquivo = decodeURIComponent(partes.slice(1).join("/"));
 
-    } else if (etapaFallback === 2) {
-
-      /*
-       * EDIÇÃO 3 APLICADA:
-       * Consulta o servidor real do item nos metadados,
-       * em vez de chumbar um servidor fixo (ia801501).
-       * Funciona para TODAS as coleções da grade.
-       */
-      const idDoItem =
-        urlOriginal
-          .replace("https://archive.org/download/", "")
-          .split("/")[0];
-      const nomeDoArquivo =
-        urlOriginal.split("/").pop();
-
-      fetch(
-        `https://archive.org/metadata/${idDoItem}`
-      )
-        .then(function(resposta) {
-          return resposta.json();
-        })
-        .then(function(meta) {
+      fetch(`https://archive.org/metadata/${idDoItem}`)
+        .then(resposta => resposta.json())
+        .then(meta => {
           if (meta && meta.server && meta.dir) {
-            player.src =
-              `https://${meta.server}${meta.dir}/${encodeURIComponent(nomeDoArquivo)}`;
+            // Codifica cada segmento do caminho separadamente,
+            // preservando as barras "/" de subpastas (ex: cdz_full)
+            const caminhoCodificado = nomeDoArquivo
+              .split('/')
+              .map(segmento => encodeURIComponent(segmento))
+              .join('/');
+
+            // Ex: https://ia801501.us.archive.org/28/items/cdz_full/11%20Saint.../01%20A%20Promessa.mp4
+            player.src = `https://${meta.server}${meta.dir}/${caminhoCodificado}`;
           } else {
             player.src = urlOriginal;
           }
           player.load();
-          player.play().catch(function() {});
+          player.play().catch(() => {});
         })
-        .catch(function() {
+        .catch(() => {
           player.src = urlOriginal;
           player.load();
+          player.play().catch(() => {});
         });
-
-    } else if (etapaFallback === 3) {
-
-      /*
-       * EDIÇÃO 4 APLICADA:
-       * A Liga da Justiça não tem versões alternativas
-       * (_640 / proxy). Volta para a URL original
-       * e desiste do fallback sem travar no proxy.
-       */
-      if (
-        urlOriginal.includes(LIGA_DA_JUSTICA_ID)
-      ) {
-        etapaFallback = 0;
-        tratarErroOuDemora(programa);
-        return;
-      }
-
-      const urlAlternativa =
-        urlOriginal.replace(
-          /(_512|\.ia)\.mp4$/,
-          '_640.mp4'
-        );
-
-      if (
-        urlAlternativa !==
-        urlOriginal
-      ) {
-
-        console.log(
-          "Tentando versão alternativa com áudio:",
-          urlAlternativa
-        );
-
-        player.src =
-          urlAlternativa;
-
-      } else {
-
-        player.src =
-          `https://api.allorigins.win/raw?url=${encodeURIComponent(urlOriginal)}`;
-      }
-
     } else {
+      // URL externa ao Archive: vai direto para o reload limpo
+      player.src = urlOriginal;
+      player.load();
+      player.play().catch(() => {});
+    }
 
+  // ETAPA 2: Força recarregamento limpo da URL sem query strings
+  } else if (etapaFallback === 2) {
+    player.src = urlOriginal;
+    player.load();
+    player.play().catch(() => {});
+
+  // ETAPA 3: Tenta alteração de sufixo de qualidade ou Proxy CORS
+  } else if (etapaFallback === 3) {
+    if (urlOriginal.includes(LIGA_DA_JUSTICA_ID)) {
       etapaFallback = 0;
-
-      tratarErroOuDemora(
-        programa
-      );
-
+      tratarErroOuDemora(programa);
       return;
     }
 
-    timeoutCarregamento =
-      setTimeout(
-        () => {
+    const urlAlternativa = urlOriginal.replace(/(_512|\.ia)\.mp4$/i, '_640.mp4');
 
-          if (player.readyState === 0) {
-            aplicarEstrategiaFallback(
-              programa,
-              index
-            );
-          }
+    if (urlAlternativa !== urlOriginal) {
+      player.src = urlAlternativa;
+    } else {
+      player.src = `https://api.allorigins.win/raw?url=${encodeURIComponent(urlOriginal)}`;
+    }
+    player.load();
+    player.play().catch(() => {});
 
-        },
-        STEP_TIMEOUT_MS
-      );
+  } else {
+    etapaFallback = 0;
+    tratarErroOuDemora(programa);
+    return;
   }
+
+  timeoutCarregamento = setTimeout(() => {
+    if (player.readyState === 0) {
+      aplicarEstrategiaFallback(programa, index);
+    }
+  }, STEP_TIMEOUT_MS);
+}
 
   function executarMidia(
     index,
