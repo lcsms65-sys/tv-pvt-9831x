@@ -1050,7 +1050,8 @@
   {
     h: "17:30",
     dur: 30,
-    padrao: { n: "Os Cavaleiros do Zodíaco", id: ["cavaleirosdozodiaco", "cavaleirosdozodiaco_202107", "cavaleiros.-do.-zodiaco-03-saga-doze-casas", "cavaleiros-do-zodiaco-04-saga-asgard"] },
+    padrao: { n: "Os Cavaleiros do Zodíaco", id: ["cavaleirosdozodiaco", "cavaleirosdozodiaco_202107", "cavaleiros.-do.-zodiaco-03-saga-doze-casas", "cavaleiros-do-zodiaco-04-saga-asgard"],
+      repriseDe: "08:30" },
     exceto: {
       ter: { n: "Pokémon", id: ["pokemonligaindigocartoonnetworkbr", "PKMLigaLaranjaCNBR", "PKMLigaJohtoCNBR"] },
       qui: { n: "Pokémon", id: ["pokemonligaindigocartoonnetworkbr", "PKMLigaLaranjaCNBR", "PKMLigaJohtoCNBR"] },
@@ -1115,7 +1116,7 @@
   },
   {
     h: "22:00",
-    dur: 60,
+    dur: { padrao: 60, seg: 35, ter: 35, qua: 35, qui: 35, dom: 60 },
     padrao: { n: "Stranger Things", id: ["PaixaoFlix-Stranger-Things-2016-1a-Temporada", "PaixaoFlix-Stranger-Things-2017-2a-Temporada", "PaixaoFlix-Stranger-Things-3a-Temporada", "PaixaoFlix-Stranger-Things-4a-Temporada", "PaixaoFlix-Stranger-Things-4a-Temporada-2022-VOLUME-2"] },
     exceto: {
       seg: { n: "A Grande Família", id: "series-a-grande-familia-20012014_202503" },
@@ -1127,7 +1128,7 @@
   },
   {
     h: "22:30",
-    dur: { padrao: 35},
+    dur: padrao: 35,
     padrao: { n: "A Grande Família", id: "series-a-grande-familia-20012014_202503" },
     exceto: {
       sex: null,
@@ -1576,7 +1577,7 @@
         listaEpisodios: [],
         epIndexAtual: -1,
 
-        repriseDe: slot.repriseDe || null,
+        repriseDe: progInfo.repriseDe || slot.repriseDe || null,
 
         ocorrenciaId: "",
         numeroOcorrenciaMesmoPrograma: 0,
